@@ -1,0 +1,47 @@
+== JoCoBot
+JoCoBot is an IRC Bot that "sings" which was inspired by Jonathan Coulton. 
+
+== Connection
+To connect the IRC bot to a channel, run the start.rb file in the bin directory. For example,
+  ruby bin/start.rb -s irc.freenode.net -c joco
+At a minimum, the server and channel parameters are required. See --help for more options. 
+
+To disconnect, run the stop.rb file in the bin directory. 
+  ruby bin/stop.rb
+  
+== Commands
+With the exception of the monkey reaction, JoCoBot only responds to IRC chatter in which he is addressed. This occurs whenever the name of the bot is included anywhere in a line of text sent to the channel to which the bot is connected.
+=== Sing a random song
+JoCoBot will sing a random song if he is told to "sing" is given with no other text following the word "sing."
+  Hey, JoCo, sing!
+=== Sing a specific song
+JoCoBot will sing a specific song if he is told to "sing" and the title of a song, and nothing but the title of the song (excluding punctuation) immediately follows the word "sing."
+  JoCo, sing "The Future Soon."
+=== Stop singing
+JoCoBot will stop singing a song whenever he is told to "stop."
+  Stop singing, JoCo.
+=== Resume singing
+JoCoBot can resume singing where he left off, provided he was stopped in the middle of a song, by being told to "resume singing."
+  JoCo, resume singing the song you were singing before.
+=== Name the song
+If JoCoBot was singing a song earlier and is now stopped, he can say the name of the song he was singing by being asked what that "song" is "called" or what the "name" of the "song" is.
+  JoCo, what is that song called?
+=== Monkey
+JoCoBot has a fear of being knocked down by being hit in the face with a stuffed monkey. Whenever he hears the word "monkey" this fear causes him immediately to stop whatever he is doing. 
+  
+== Customization
+JoCoBot ships with Jonathan Coulton lyrics and persona. However, at it its core it is a generic singing bot than can easily be adapted to be any singer. To do so, one must retrieve the lyrics of the songs one wishes the bot to sing and put them in text files in the lib/lyrics directory. The first line of each file should be the title of the song, followed by an empty line, then the lyrics. The lyrics will be "sung" one line at a time. During random singing, the bot may start at any point in the lyrics preceded by an empty line. The filename of each text file should be the title of the song without any spaces or punctuation. 
+
+Once all desired songs are placed in the lib/lyrics directory, the conf/const.rb file may be edited with the bot's name, appropriate strings for responses from the bot, and actions performed by the bot, in order to customize the bot's personality.
+
+== Future Development
+This is only the initial release of JoCoBot. Features that are planned for future development include
+* Sensitivity to keywords associated with certain songs, such that whenever someone in the IRC channel mentions a keyword, the bot begins to sing a certain song at a certain line
+* Timing of lyrics so that lyrics appear Karaoke-style in sync with when the lyrics are sung in the actual song
+
+== About
+Version:: 0.1
+Author:: Joshua J. Born (joshua.born@gmail.com)
+Website:: http://busyprogrammer.wordpress.com/
+Copyright:: Code Copyright (c) 2010 Joshua J. Born; Lyrics Copyright (c) Jonathan Coulton
+License:: MIT license for Ruby code. See LICENSE in this directory for details. Creative Commons Attribution-NonCommercial 3.0 Unported license for lyrics. See LICENSE in lib/lyrics directory for details. 

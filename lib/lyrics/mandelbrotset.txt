@@ -1,0 +1,61 @@
+Mandelbrot Set
+
+Pathological monsters! cried the terrified mathematician
+Every one of them a splinter in my eye
+I hate the Peano Space and the Koch Curve
+I fear the Cantor Ternary Set
+The Sierpinski Gasket makes me wanna cry
+And a million miles away a butterfly flapped its wings
+On a cold November day a man named Benoit Mandelbrot was born
+
+His disdain for pure mathematics and his unique geometrical insights
+Left him well equipped to face those demons down
+He saw that infinite complexity could be described by simple rules
+Used his giant brain and he turned the game around
+And he looked below the storm saw a vision in his head
+A bulbous pointy form
+Picked his pencil up and he wrote his secret down
+
+Just take a point called Z in the complex plane
+Let Z1 be Z squared plus C
+And Z2 is Z1 squared plus C
+And Z3 is Z2 squared plus C and so on
+If the series of Zs should always stay
+Close to Z and never trend away
+That point is in the Mandelbrot Set
+
+Mandelbrot Set you're a Rorschach Test on fire
+You're a day-glo pterodactyl
+You're a heart-shaped box of springs and wire
+You're one badass fucking fractal
+And you're just in time to save the day
+Sweeping all our fears away
+You can change the world in a tiny way
+
+Mandelbrot's in heaven, at least he will be when he's dead
+Right now he's still alive and teaching math at Yale
+He gave us order out of chaos, he gave us hope where there was none
+His geometry succeeds where others fail
+So if you ever lose your way, a butterfly will flap its wings
+From a million miles away, a little miracle will come to take you home
+
+Just take a point called Z in the complex plane
+Let Z1 be Z squared plus C
+And Z2 is Z1 squared plus C
+And Z3 is Z2 squared plus C and so on
+If the series of Zs will always stay
+Close to Z instead of trend away
+That point is in the Mandelbrot Set
+
+Mandelbrot Set you're a Rorschach Test on fire
+You're a day-glo pterodactyl
+You're a heart-shaped box of springs and wire
+You're one badass fucking fractal
+And you're just in time to save the day
+Sweeping all our fears away
+You can change the world in a tiny way
+Cause you're just in time to save the day
+Sweeping all our fears away
+You can change the world in a tiny way
+Go on change the world in a tiny way
+Come on change the world in a tiny way
