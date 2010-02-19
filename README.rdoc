@@ -12,7 +12,7 @@ To disconnect, run the stop.rb file in the bin directory.
 == Commands
 With the exception of the monkey reaction, JoCoBot only responds to IRC chatter in which he is addressed. This occurs whenever the name of the bot is included anywhere in a line of text sent to the channel to which the bot is connected.
 === Sing a random song
-JoCoBot will sing a random song if he is told to "sing" is given with no other text following the word "sing."
+JoCoBot will sing a random song if he is told to "sing" with no other text following the word "sing."
   Hey, JoCo, sing!
 === Sing a specific song
 JoCoBot will sing a specific song if he is told to "sing" and the title of a song, and nothing but the title of the song (excluding punctuation) immediately follows the word "sing."
