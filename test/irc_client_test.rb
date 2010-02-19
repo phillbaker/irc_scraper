@@ -31,7 +31,7 @@ class TestBot < Bot
 end
 
 # This unit test requires an IRC server to be running and accessible via the network in order to pass.
-class BotTest < Test::Unit::TestCase
+class IRCClientTest < Test::Unit::TestCase
   
   CHANNEL = '#test'
   SERVER = 'localhost'

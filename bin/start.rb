@@ -39,7 +39,8 @@ opts = GetoptLong.new(
   )
 server = nil
 channel = nil
-args = []
+port = 6667
+password = nil
 opts.each do |opt, arg|
   case opt
     when '--help'
@@ -50,9 +51,9 @@ opts.each do |opt, arg|
     when '--channel'
       channel = arg
     when '--port'
-      args.unshift(arg.to_i)
+      port = arg.to_i
     when '--password'
-      args << arg
+      password = arg
   end
 end
 if server.nil? 
@@ -67,9 +68,7 @@ if File.exist?(PID_FILE_PATH)
   exit(1)
 end
 pid = Process.fork do
-  args.unshift(6667) if args.length < 2
-  args.unshift(JoCoBot.new, channel, server)
-  irc = IRCClient.new(*args)
+  irc = IRCClient.new(JoCoBot.new, channel, server, port, password)
   trap("QUIT") { irc.close; exit }
   while true do end
 end

@@ -2,7 +2,7 @@ require 'socket'
 
 class IRCClient
   
-  def initialize(bot, channel, server, port = 6667, password = nil)
+  def initialize(bot, channel, server, port, password)
     @bot = bot
     @bot.register Proc.new { |message| say message }, Proc.new { |action| act action }
     @channel = channel =~ /^#/ ? channel : "#" + channel
