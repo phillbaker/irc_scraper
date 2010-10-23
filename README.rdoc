@@ -1,3 +1,5 @@
+http://blog.webicity.info/2010/10/14/a-quick-basic-primer-on-the-irc-protocol/
+
 == JoCoBot
 JoCoBot is an IRC Bot that "sings" which was inspired by Jonathan Coulton. 
 

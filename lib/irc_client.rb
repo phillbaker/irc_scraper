@@ -4,7 +4,7 @@ require 'timeout'
 class IRCClient
   
   def initialize(bot, server, port, channel, password)
-    @log_file = File.new(IRC_LOG_FILE_PATH, "a") #$> #stdout by default #
+    @log_file = File.new(IRC_LOG_FILE_PATH, "a")
     
     @socket = TCPSocket.open(server, port)
     
@@ -24,42 +24,13 @@ class IRCClient
     
     send "NICK #{@bot.name}"
     send "USER #{@bot.name.downcase} 0 * #{@bot.name}"
-    #@socket.puts ""
-    #@socket.flush
     while not @socket.closed?
       message = @socket.gets
       log message if message != nil
       break if message =~ /:End of \/MOTD command./
     end
     
-    #send "PING :message"
     send "JOIN #{@channel}"
-    #@socket.puts ""
-    #@socket.flush
-    #send ""
-    #require 'ruby-debug'; debugger
-    #while not @socket.closed?
-    #  message = ''
-    #  begin 
-    #    timeout(3) do
-    #      @socket.puts ""
-    #      @socket.flush
-    #      message = @socket.gets
-    #      log message if message != nil
-    #    end
-    #  rescue Timeout::Error
-    #    send "TIME"
-    #    break
-    #  end
-    #  break if message =~ /JOIN :#{@channel}/
-      #sleep 1
-      #send "TIME"#"VERSION"
-    #end
-    #send "JOIN #{@channel}"
-    #log "got here"
-    #send "JOIN #{@channel}"
-    #sleep 5
-    #@bot.say 'helloworld' #"TIME", false
     
     #@listening_thread = Thread.new do 
       until @socket.closed? do
@@ -81,7 +52,8 @@ class IRCClient
   end
   
   def log message
-    @log_file.puts "#{@bot.name} received:  #{message}"
+    @log_file.puts "#{@bot.name} received @ #{Time.now.strftime('%Y%m%d %H:%M.%S')}:  #{message}"
+    @log_file.flush
   end
   
   def close
@@ -94,7 +66,7 @@ class IRCClient
   end
   
   def send(message)
-    @log_file.puts "#{@bot.name} sent:  #{message}"
+    @log_file.puts "#{@bot.name} sent @ #{Time.now.strftime('%Y%m%d %H:%M.%S')}:  #{message}"
     @log_file.flush
     @socket.puts message + "\r"
     @socket.flush
