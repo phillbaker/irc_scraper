@@ -9,10 +9,7 @@ class IRCClient
     @socket = TCPSocket.open(server, port)
     
     @bot = bot
-    @bot.register do |message| 
-      say(message)
-    end  
-    #Proc.new {  }
+    @bot.register Proc.new {|message| say(message) }
     @channel = channel =~ /^#/ ? channel : "#" + channel
     
     if password
@@ -32,7 +29,7 @@ class IRCClient
     
     send "JOIN #{@channel}"
     
-    #@listening_thread = Thread.new do 
+    @listening_thread = Thread.new do
       until @socket.closed? do
         message = @socket.readline #(nil)
         log message
@@ -42,12 +39,17 @@ class IRCClient
           close
           exit(1)
         elsif message =~ /PRIVMSG #{@channel} :(.*)$/
-          @bot.hear $1
+          begin
+            @bot.hear $1
+          rescue Exception
+            log $!.to_s + $@.to_s
+          end
         else
           #doesn't really matter we still log it, we just don't need to respond to it
         end
       end
-    #end
+      
+    end
   end
   
   def log message

@@ -59,11 +59,12 @@ class EnWikiBot < Bot #TODO db.close
   end
   
   def db_write! article_name, desc, url, user, byte_diff, ts, description
-    @db.execute( %{
+    statement = @db.prepare( %{
       INSERT INTO %s
       (article_name, desc, url, user, byte_diff, ts, description)
       VALUES ('%s', '%s', '%s', '%s', %d, %d, '%s')
     } % [@table_name, article_name, desc, url, user, byte_diff, ts, description] )
+    statement.execute!
   end
   
 end

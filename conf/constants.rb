@@ -1,5 +1,5 @@
 BOT_NAME = 'ScraperBot'
-REVISION_REGEX = /\[\[([a-zA-Z\-_\ ]+)\]\]\ ([A-Z]+)\ ([a-zA-Z\.:\/\?=0-9&]+)\ \*\ ([a-zA-Z\-_\.]+)\ \*\ \(([0-9\-\+]+)\)\ (.*)/
+REVISION_REGEX = /\00314\[\[\00307(.*)\00314\]\]\0034\ (.*)\00310\ \00302(.*)\003\ \0035\*\003\ \00303(.*)\003\ \0035\*\003\ \((.*)\)\ \00310(.*)\003/
 TABLE_SCHEMA_PREFIX = 'CREATE TABLE '
 TABLE_SCHEMA_SUFFIX = <<-SQL
        (
@@ -34,4 +34,7 @@ insert into test_table (article_name, desc, url, user, byte_diff, ts, descriptio
 
 "[[Jean-Cyril Spinetta]] MB http://en.wikipedia.org/w/index.php?diff=392133710&oldid=379581588 * RjwilmsiBot * (+228) /* References */Adding Persondata using [[Project:AWB|AWB]] (7307)"
 .scan(/\[\[([a-zA-Z\-_\ ]+)\]\]\ ([A-Z]+)\ ([a-zA-Z\.:\/\?=0-9&]+)\ \*\ ([a-zA-Z\-_\.]+)\ \*\ \(([0-9\-\+]+)\)\ (.*)/).first
+
+\x0314[[\x0307...\x0314]]\x034...\x0310 \x0302...\x03\x035*\x03 \x03...\x03 \x035*\x03 (...) \x0310...\x03
+\00314\[\[\00307(.*)\00314\]\]\0034\ (.*)\00310\ \00302(.*)\003\ \0035*\003\ \00303(.*)\003\ \0035*\003\ \((.*)\)\ \00310(.*)\003
 =end
