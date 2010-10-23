@@ -23,7 +23,7 @@
 #    the password of the server to connect to, if necessary
 
 require File.dirname(__FILE__) + '/../conf/include'
-require 'jocobot.rb'
+require 'enwiki_bot'
 require 'irc_client.rb'
 require 'getoptlong'
 require 'rdoc/usage'
@@ -67,12 +67,15 @@ if File.exist?(PID_FILE_PATH)
   puts "Error: cannot start a bot. A pid.txt file was found. A bot may be already running."
   exit(1)
 end
-pid = Process.fork do
-  irc = IRCClient.new(JoCoBot.new, channel, server, port, password)
-  trap("QUIT") { irc.close; exit }
-  while true do end
-end
-pid_file = File.open(PID_FILE_PATH, "w")
-pid_file.write(pid.to_s)
-pid_file.close
-Process.detach(pid)
+#pid = Process.fork do
+  require 'echo_bot'
+  bot = EchoBot.new
+  #bot = EnWikiBot.new(server, port, channel, password) 
+  irc = IRCClient.new(bot, server, port, channel, password)
+  #trap("QUIT") { irc.close; exit }
+  #while true do end
+#end
+#pid_file = File.open(PID_FILE_PATH, "w")
+#pid_file.write(pid.to_s)
+#pid_file.close
+#Process.detach(pid)

@@ -2,21 +2,16 @@ class Bot
   
   attr_accessor :name
   
-  def initialize(name = "Bot")
-    @name = name
+  def initialize(name = '')
+    @name = name.empty? ? ('Bot' + (rand*1e6).to_i.to_s) : name
   end
   
-  def register(say, act)
+  def register(say)
     @say = say
-    @act = act
   end
   
   def say(message)
     @say.call(message)
-  end
-  
-  def act(action)
-    @act.call(action)
   end
   
   def hear(message)

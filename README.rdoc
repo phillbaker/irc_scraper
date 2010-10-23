@@ -9,6 +9,9 @@ At a minimum, the server and channel parameters are required. See --help for mor
 To disconnect, run the stop.rb file in the bin directory. 
   ruby bin/stop.rb
   
+== Tests
+To run the tests
+
 == Commands
 With the exception of the monkey reaction, JoCoBot only responds to IRC chatter in which he is addressed. This occurs whenever the name of the bot is included anywhere in a line of text sent to the channel to which the bot is connected.
 === Sing a random song

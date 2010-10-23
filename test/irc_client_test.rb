@@ -41,9 +41,9 @@ class IRCClientTest < Test::Unit::TestCase
   def test_ping_pong
     File.delete(IRC_LOG_FILE_PATH) if File.exist?(IRC_LOG_FILE_PATH)
     pinger = TestBot.new('Pinger')
-    ponger = TestBot.new('Ponger')
-    irc1 = IRCClient.new(pinger, CHANNEL, SERVER, PORT, PASSWORD)
-    irc2 = IRCClient.new(ponger, CHANNEL, SERVER, PORT, PASSWORD)
+    ponger = TestBot.new('Ponger')# server, port, channel, password
+    irc1 = IRCClient.new(pinger, SERVER, PORT, CHANNEL, PASSWORD)
+    irc2 = IRCClient.new(ponger, SERVER, PORT, CHANNEL, PASSWORD)
     sleep 3
     3.times do
       sleep 3
