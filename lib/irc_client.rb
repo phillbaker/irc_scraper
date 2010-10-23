@@ -4,12 +4,15 @@ require 'timeout'
 class IRCClient
   
   def initialize(bot, server, port, channel, password)
-    @log_file = File.new(IRC_LOG_FILE_PATH, "a")
+    @log_file = $> #stdout by default #File.new(IRC_LOG_FILE_PATH, "a")
     
     @socket = TCPSocket.open(server, port)
     
     @bot = bot
-    @bot.register Proc.new { |message| say(message) }
+    @bot.register do |message| 
+      say(message)
+    end  
+    #Proc.new {  }
     @channel = channel =~ /^#/ ? channel : "#" + channel
     
     if password
@@ -58,7 +61,7 @@ class IRCClient
     #sleep 5
     #@bot.say 'helloworld' #"TIME", false
     
-    @listening_thread = Thread.new do 
+    #@listening_thread = Thread.new do 
       until @socket.closed? do
         message = @socket.readline #(nil)
         log message
@@ -74,7 +77,7 @@ class IRCClient
           #log "fell through"
         end
       end
-    end
+    #end
   end
   
   def log message
