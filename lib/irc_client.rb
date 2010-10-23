@@ -4,7 +4,7 @@ require 'timeout'
 class IRCClient
   
   def initialize(bot, server, port, channel, password)
-    @log_file = $> #stdout by default #File.new(IRC_LOG_FILE_PATH, "a")
+    @log_file = File.new(IRC_LOG_FILE_PATH, "a") #$> #stdout by default #
     
     @socket = TCPSocket.open(server, port)
     
