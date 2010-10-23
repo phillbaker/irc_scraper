@@ -12,7 +12,7 @@ class EnWikiBot < Bot #TODO db.close
     else
       @db = db_create!(bot_name)
       @table_name = server.gsub(/\./, '_') + '_' + channel.gsub(/\./, '_')
-      db_create_schema! @table_name #'irc_wikimedia_org_en_wikipedia' require activesupport.text.tools server.underscore!.'_'.channel.underscore!
+      db_create_schema! @table_name 
     end
     db_init
     
@@ -27,18 +27,13 @@ class EnWikiBot < Bot #TODO db.close
   end
   
   def should_store? message
-    #keep everything...
-    true
+    #keep messages that match our format...eventually this will be limited to certain messages, should we spin out a thread per message?
+    message =~ REVISION_REGEX
   end
   
   def store! message
-    #check_for_command message.gsub(/#{@name.downcase}/i, " ")
-    fields = message.scan(/\[\[([a-zA-Z\-_\ ]+)\]\]\ ([A-Z]+)\ ([a-zA-Z\.:\/\?=0-9&]+)\ \*\ ([a-zA-Z\-_\.]+)\ \*\ \(([0-9\-\+]+)\)\ (.*)/).first
+    fields = message.scan(REVISION_REGEX).first
     db_write! fields[0], fields[1], fields[2], fields[3], fields [4].to_i, Time.now.to_i, fields[5]
-    #db_cmd = %{ INSERT INTO %s (article_name) VALUES ('%s') d} % [@table_name, message]
-    #db_cmd = "INSERT INTO #{@table_name} (article_name) VALUES ('#{message.chomp}')"
-    #say db_cmd
-    #@db.execute(db_cmd)
   end
 
   def db_exists? db_name
@@ -50,11 +45,6 @@ class EnWikiBot < Bot #TODO db.close
   end
   
   def db_create_schema! table_name
-    #begin
-    #  @db.execute_batch TABLE_SCHEMA #requires table_name
-    #rescue SQLite3::SQLException
-    #  
-    #end
     if @db.table_info(table_name).empty?
       @db.execute_batch(TABLE_SCHEMA_PREFIX + table_name + TABLE_SCHEMA_SUFFIX)
     end

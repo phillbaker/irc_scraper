@@ -68,9 +68,9 @@ if File.exist?(PID_FILE_PATH)
   exit(1)
 end
 pid = Process.fork do
-  require 'echo_bot'
-  bot = EchoBot.new
-  #bot = EnWikiBot.new(server, port, channel, password) 
+  #require 'echo_bot'
+  #bot = EchoBot.new
+  bot = EnWikiBot.new(server, port, channel, password) 
   irc = IRCClient.new(bot, server, port, channel, password)
   trap("QUIT") { irc.close; exit }
   while true do end

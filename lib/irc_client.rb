@@ -45,7 +45,6 @@ class IRCClient
           @bot.hear $1
         else
           #doesn't really matter we still log it, we just don't need to respond to it
-          #log "fell through"
         end
       end
     #end

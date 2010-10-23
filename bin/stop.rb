@@ -28,7 +28,12 @@ unless File.exist?(PID_FILE_PATH)
 else
   pid_file = File.new(PID_FILE_PATH, "r")
   pid = pid_file.readline.to_i
-  Process.kill("QUIT", pid)
+  begin
+    Process.kill("QUIT", pid)
+  rescue Errno::ESRCH
+    puts "Error: cannot stop the bot, PID does not exist. It may have already been killed, or may have exited due to an error"
+    # stopping an already stopped process is considered a success (exit status 0)
+  end
   pid_file.close
   File.delete(PID_FILE_PATH)
 end

@@ -1,4 +1,5 @@
 BOT_NAME = 'ScraperBot'
+REVISION_REGEX = /\[\[([a-zA-Z\-_\ ]+)\]\]\ ([A-Z]+)\ ([a-zA-Z\.:\/\?=0-9&]+)\ \*\ ([a-zA-Z\-_\.]+)\ \*\ \(([0-9\-\+]+)\)\ (.*)/
 TABLE_SCHEMA_PREFIX = 'CREATE TABLE '
 TABLE_SCHEMA_SUFFIX = <<-SQL
        (
