@@ -21,6 +21,7 @@ class IRCClient
     
     send "NICK #{@bot.name}"
     send "USER #{@bot.name.downcase} 0 * #{@bot.name}"
+    #wait until we get the go-ahead messages
     while not @socket.closed?
       message = @socket.gets
       log message if message != nil
