@@ -22,7 +22,7 @@ class EnWikiBot < Bot #TODO db.close
   def hear(message)
     if should_store? message
       store! message
-      #say message
+      
     end
   end
   
@@ -34,6 +34,7 @@ class EnWikiBot < Bot #TODO db.close
   def store! message
     fields = message.scan(REVISION_REGEX).first
     db_write! fields[0], fields[1], fields[2], fields[3], fields [4].to_i, Time.now.to_i, fields[5]
+    #TODO return the key of the row that was created
   end
 
   def db_exists? db_name
@@ -65,6 +66,9 @@ class EnWikiBot < Bot #TODO db.close
       VALUES ('%s', '%s', '%s', '%s', %d, %d, '%s')
     } % [@table_name, article_name, desc, url, user, byte_diff, ts, description] )
     statement.execute!
+    
+    #return the primary id of the row that was created:
+    @db.get_first_value("SELECT last_insert_rowid()")
   end
   
 end
