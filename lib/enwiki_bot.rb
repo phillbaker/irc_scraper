@@ -21,20 +21,24 @@ class EnWikiBot < Bot #TODO db.close
   
   def hear(message)
     if should_store? message
-      store! message
-      
+      info = store! message
+      #call our other methods in threads and pass the primary id so that
+      #e.g.: require 'author_detective'; AuthorDetective.find_info(info)
     end
   end
   
   def should_store? message
     #keep messages that match our format...eventually this will be limited to certain messages, should we spin out a thread per message?
-    message =~ REVISION_REGEX
+    message =~ REVISION_REGEX #TODO this is silly, we should only scan this once...
   end
   
+  #returns primary_id, article_name, desc, url, user, byte_diff, timestamp, description
   def store! message
     fields = message.scan(REVISION_REGEX).first
-    db_write! fields[0], fields[1], fields[2], fields[3], fields [4].to_i, Time.now.to_i, fields[5]
-    #TODO return the key of the row that was created
+    time = Time.now.to_i
+    id = db_write! fields[0], fields[1], fields[2], fields[3], fields [4].to_i, time, fields[5]
+    #return the info used to create this so we can just pass them in code instead of querying the db
+    [id, fields[0], fields[1], fields[2], fields[3], fields [4].to_i, time, fields[5]]
   end
 
   def db_exists? db_name
