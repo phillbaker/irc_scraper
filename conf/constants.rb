@@ -17,3 +17,5 @@ DB_SUFFIX = 'sqlite3'
 
 PID_FILE_PATH = File.dirname(__FILE__) + '/../tmp/pid.txt'
 IRC_LOG_DIR_PATH = File.dirname(__FILE__) + '/../log'
+
+WIKI_API_URL = 'http://en.wikipedia.org/w/api.php'
