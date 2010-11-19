@@ -2,6 +2,9 @@
 require 'bot.rb'
 
 require 'author_detective.rb'
+require 'page_detective.rb'
+require 'revision_detective.rb'
+
 require 'rubygems'
 require 'sqlite3'
 
@@ -31,6 +34,8 @@ class EnWikiBot < Bot #TODO db.close
       #call our other methods in threads and pass the primary id so that
       #e.g.:  AuthorDetective.find_info(info)
       AuthorDetective.get_background(info)
+      PageDetective.get_background(info)
+      RevisionDetective.get_background(info)
     end
   end
   
