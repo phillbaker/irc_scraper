@@ -21,7 +21,24 @@ require 'net/http'
 def get_xml(params = {:format => :xml, :action => :query})
   url = _form_url(params)
   
-  resp = Net::HTTP.get_response(URI.parse(url))
+  #requests without user-agents are refused. See:
+  #http://www.mooduino.co.uk/2010/04/wikipedia-api-user-agent-string-in-php.html
+  #"User-Agent"
+  #WikipediaSpamBot/0.1 (+hincapie.cis.upenn.edu)
+
+  #resp = Net::HTTP.get_response(URI.parse(url))
+
+  url = URI.parse("http://www.whatismyip.com/automation/n09230945.asp")
+
+  req = Net::HTTP::Get.new(url.path)
+  req.add_field('User-Agent', 'WikipediaSpamBot/0.1 (+hincapie.cis.upenn.edu)')
+
+  resp = Net::HTTP.new(url.host).start do |http|
+    http.request(req)
+  end
+
+  raise "POST FAILED:" + resp.inspect unless resp.is_a? Net::HTTPOK or resp.is_a? Net::HTTPFound
+  resp.body #get xml
 end
 
 def _form_url(params)
