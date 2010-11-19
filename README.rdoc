@@ -28,7 +28,6 @@ Based in part on http://blog.webicity.info/2010/10/14/a-quick-basic-primer-on-th
 
 == About
 Version:: 0.1
-Author:: Joshua J. Born (joshua.born@gmail.com)
-Website:: http://busyprogrammer.wordpress.com/
-Copyright:: Code Copyright (c) 2010 Joshua J. Born; Lyrics Copyright (c) Jonathan Coulton
-License:: MIT license for Ruby code. See LICENSE in this directory for details. Creative Commons Attribution-NonCommercial 3.0 Unported license for lyrics. See LICENSE in lib/lyrics directory for details. 
+Author:: Avantika Agrawal, Phillip Baker, Brittney Exline 
+Copyright:: Copyright (c) 2010 Avantika Agrawal, Phillip Baker, Brittney Exline. Some portions of the code Copyright (c) 2010 Joshua J. Born
+License:: MIT license for Ruby code. See LICENSE in this directory for details. 
