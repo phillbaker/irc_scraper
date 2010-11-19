@@ -20,11 +20,11 @@ class EnWikiBotTest < Test::Unit::TestCase
   end
   
   def test_db_exists?
-    
+    #TODO
   end
   
   def test_db_create!
-    
+    #TODO
   end
   
   def test_db_create_schema!
@@ -37,48 +37,27 @@ class EnWikiBotTest < Test::Unit::TestCase
   end
   
   def test_db_open
-    
+    #TODO
   end
   
   def test_db_init
-    
+    #TODO
   end
   
   def test_db_write!
-    
+    #TODO
   end
   
-  def test_sing_requested_song_monkey_stop_and_name_of_song
-    song = @bot.songs.random_song
-    @bot.hear "#{BOT_NAME.downcase} sing #{song.title}"
-    listen_to_song
-    assert_equal STARTING_ACTION, @done.first
-    song.beginning
-    @said.each do |line|
-      assert_equal song.next_line, line
-    end
-    before_length = @said.length
-    @bot.hear "something something monkey something else"
-    sleep 5
-    assert_equal before_length, @said.length
-    assert MONKEY_ACTIONS.inject(false) { |boolean, action| boolean || @done.include?(action) }
-    assert_equal STOPPING_ACTION, @done.last
-    @bot.hear "#{BOT_NAME.downcase} what is the name of that song"
-    assert_equal "#{NAME_OF_SONG_RESPONSE} \"#{song.title}.\"", @said.last
-    @said = []
-    @bot.hear "#{BOT_NAME.downcase} what is that song called?"
-    assert_equal "#{NAME_OF_SONG_RESPONSE} \"#{song.title}.\"", @said.last
+  def test_should_store?
+    #plain text version, without the true jobbies
+    assert(!@bot.should_store?("[[Albert G. Brown]] http://en.wikipedia.org/w/index.php?diff=397580708&oldid=394909102 * Good Olfactory * (+53) added [[Category:Democratic Party United States Senators]] using [[WP:HC|HotCat]]"))
+    #with invisibles below:
+    assert(@bot.should_store?("14[[07Amar Ben Belgacem14]]4 M10 02http://en.wikipedia.org/w/index.php?diff=392473902&oldid=391225974 5* 03SD5 5* (+226) 10fixes, added persondata, typos fixed: august 24 → August 24 using [[Project:AWB|AWB]]"))
   end
   
-  private
-  
-  def listen_to_song
-    timer = 0
-    until @said.length > 2 || timer > 30
-      sleep 1
-      timer = timer + 1
-    end
-    assert @said.length > 2
+  def test_hear_calls
+    #TODO needs to run in isolation
+    assert(@bot.hear("14[[07Amar Ben Belgacem14]]4 M10 02http://en.wikipedia.org/w/index.php?diff=392473902&oldid=391225974 5* 03SD5 5* (+226) 10fixes, added persondata, typos fixed: august 24 → August 24 using [[Project:AWB|AWB]]"))
   end
   
 end

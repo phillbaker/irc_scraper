@@ -1,6 +1,12 @@
+#inheritance stuff
 require 'bot.rb'
+
+require 'author_detective.rb'
 require 'rubygems'
 require 'sqlite3'
+
+#out
+require 'author_detective.rb'
 
 class EnWikiBot < Bot #TODO db.close
   
@@ -11,7 +17,7 @@ class EnWikiBot < Bot #TODO db.close
       db_open bot_name
     else
       @db = db_create!(bot_name)
-      @table_name = server.gsub(/\./, '_') + '_' + channel.gsub(/\./, '_')
+      @table_name = server.gsub(/\./, '_') + '_' + channel.gsub(/\./, '_') #TODO this isn't really sanitized...use URI.parse
       db_create_schema! @table_name 
     end
     db_init
@@ -23,13 +29,14 @@ class EnWikiBot < Bot #TODO db.close
     if should_store? message
       info = store! message
       #call our other methods in threads and pass the primary id so that
-      #e.g.: require 'author_detective'; AuthorDetective.find_info(info)
+      #e.g.:  AuthorDetective.find_info(info)
+      AuthorDetective.get_background(info)
     end
   end
   
   def should_store? message
     #keep messages that match our format...eventually this will be limited to certain messages, should we spin out a thread per message?
-    message =~ REVISION_REGEX #TODO this is silly, we should only scan this once...
+    message =~ REVISION_REGEX #TODO this is silly, we should only scan this once...below, probably
   end
   
   #returns primary_id, article_name, desc, url, user, byte_diff, timestamp, description
