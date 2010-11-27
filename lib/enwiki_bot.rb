@@ -33,9 +33,9 @@ class EnWikiBot < Bot #TODO db.close
       info = store! message
       #call our other methods in threads and pass the primary id so that
       #e.g.:  AuthorDetective.find_info(info)
-      AuthorDetective.get_background(info)
-      PageDetective.get_background(info)
-      RevisionDetective.get_background(info)
+      AuthorDetective.investigate(info)
+      PageDetective.investigate(info)
+      RevisionDetective.investigate(info)
     end
   end
   
@@ -62,9 +62,13 @@ class EnWikiBot < Bot #TODO db.close
   end
   
   def db_create_schema! table_name
-    if @db.table_info(table_name).empty?
+    unless db_table_exists? table_name
       @db.execute_batch(TABLE_SCHEMA_PREFIX + table_name + TABLE_SCHEMA_SUFFIX)
     end
+  end
+  
+  def db_table_exists? table_name
+    !@db.table_info(table_name).empty?
   end
   
   def db_open db_name

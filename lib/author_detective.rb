@@ -1,7 +1,5 @@
-module AuthorDetective
-  class << self
-    def get_background info
-      
-    end
+class AuthorDetective < Detective
+  def investigate info
+    
   end
 end
