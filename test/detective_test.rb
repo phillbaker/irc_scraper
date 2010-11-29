@@ -17,15 +17,31 @@ class DetectiveTest < Test::Unit::TestCase
   end
   
   def test_sql_prefix
-    assert("CREATE TABLE ".strip, @detective.sql_prefix.strip)
+    assert_equal("CREATE TABLE ".strip, @detective.sql_prefix.strip)
   end
   
   def test_sql_suffix
     #columns &= do 
     #  "id integer primary key,\n article_name varchar(128) not null"
     #end
-    assert(" detective (id integer primary key,\n article_name varchar(128) not null)", @detective.sql_suffix(){"id integer primary key,\n article_name varchar(128) not null"}.strip)
+    assert_equal("detective (id integer primary key,\n article_name varchar(128) not null)", @detective.sql_suffix(){"id integer primary key,\n article_name varchar(128) not null"}.strip)
     #assert(" detective (id integer primary key,\n article_name varchar(128) not null)", @detective.sql_suffix(&columns).strip)
+  end
+  
+  def test_setup_sql
+    s = @detective.sql_prefix() + @detective.sql_suffix()
+    s.squeeze!
+    assert_equal("CREATE TABLE detective ()", s)
+  end
+  
+  def test_setup_table
+    @detective.setup_table()
+    assert(@detective.table_exists(@detective.table_name()))
+  end
+  
+  def test_db_write!
+    @db.execute('create table test_table_exists (id integer primary key, data varchar(128))')
+    assert()
   end
   
 end
