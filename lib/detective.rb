@@ -15,8 +15,11 @@ class Detective
     'detective'
   end
 
+  #return a proc that defines the columns used by this detective
   def columns
-    
+    Proc.new do
+      "id integer primary key"
+    end
   end
 
   #main entry method for this class
@@ -34,7 +37,7 @@ class Detective
       o.is_a?(String) ? "'#{o}'" : o
     end
     data_sql = data_quoted.join(', ')
-    sql = %{INSERT INTO %s ( %s ) VALUES ( %s ) } % table_name(), column_sql, data_sql
+    sql = %{INSERT INTO %s ( %s ) VALUES ( %s ) } % [table_name(), column_sql, data_sql]
     statement = @db.prepare(sql)
     statement.execute!
     
@@ -46,9 +49,10 @@ class Detective
     "CREATE TABLE "
   end
   
-  #block expected to return a string of the column definitions
+  #By default calls the proc returned by the #columns() method
+  #Pass an optional block expected to return a string of the column definitions
   def sql_suffix #&cols
-    cols = yield if block_given?
+    cols = block_given? ? yield : columns().call
     " #{table_name()} (#{cols})"
   end
   

@@ -31,17 +31,17 @@ class DetectiveTest < Test::Unit::TestCase
   def test_setup_sql
     s = @detective.sql_prefix() + @detective.sql_suffix()
     s.squeeze!
-    assert_equal("CREATE TABLE detective ()", s)
+    assert_equal("CREATE TABLE detective (id integer primary key)", s)
   end
   
   def test_setup_table
     @detective.setup_table()
-    assert(@detective.table_exists(@detective.table_name()))
+    assert(@detective.table_exists?(@detective.table_name()))
   end
   
   def test_db_write!
-    @db.execute('create table test_table_exists (id integer primary key, data varchar(128))')
-    assert()
+    @detective.setup_table()
+    assert(1, @detective.db_write!(['id'], [1]))
   end
   
 end
