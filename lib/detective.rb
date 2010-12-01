@@ -6,7 +6,6 @@ class Detective
   
   def initialize db
     @db = db
-    #setup_table() unless table_exists? table_name()
   end
   
   def table_name
@@ -24,6 +23,7 @@ class Detective
 
   #main entry method for this class
   #should call db_write! to put results discovered during the investigation into the table
+  #info is a list of primary_id, article_name, desc, url, user, byte_diff, timestamp, description
   def investigate info
     raise NotImplementedError
   end

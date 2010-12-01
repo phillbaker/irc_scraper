@@ -1,5 +1,83 @@
+require 'detective.rb'
+require 'mediawiki_api.rb'
+
+require 'time'
+
 class AuthorDetective < Detective
+  def table_name
+    'author'
+  end
+
+  #return a proc that defines the columns used by this detective
+  #if using this as an example, you probably should copy the first two columns (the id and foreign key)
+  def columns
+    Proc.new do
+      <<-SQL
+      id integer primary key autoincrement,
+      FOREIGN KEY(revision_id) REFERENCES irc_wikimedia_org_en_wikipedia(id),   --TODO this foreign table name probably shouldn't be hard coded, and these foreign keys probably won't be enforced b/c sqlite doesn't include it by default
+      account_creation timestamp(20),                                           --this should be the entry in the logevents call, but if we exceed the max number of requests, we won't get it      block_count
+      account_lifetime integer                                                  --this is the lifetime of the account in seconds
+      --rights_grant_count                                                      
+      --rights_removal_count
+      --edits_last_second                                                       --want a figure to show recent activity do buckets instead
+      --edits_last_minute
+      --edits_last_hour
+      --edits_last_day
+      --edits_last_week
+      --edits_last_month
+      --edits_last_year
+      --total_edits
+SQL
+    end
+  end
+
+  #info is a list: 
+  # 0: primary_id (string), 
+  # 1: article_name (string), 
+  # 2: desc (string), 
+  # 3: url (string), 
+  # 4: user (string), 
+  # 5: byte_diff (int), 
+  # 6: timestamp (Time object), 
+  # 7: description (string)
   def investigate info
+    #TODO if we already have data for a user, should we look it up?
     
+    #http://en.wikipedia.org/w/api.php?action=query&titles=User:Tisane&prop=info|flagged&list=blocks|globalblocks|logevents|recentchanges|tags
+    
+    account = find_account_history(info)
+    
+    #http://en.wikipedia.org/w/api.php?action=query&list=logevents&leuser=Tisane&lelimit=max <- actions taken by user
+    #get_xml({:format => :xml, :action => :query, :list => :logevents, :leuser => info[4], :lelimit => :max })
+    
+    #http://en.wikipedia.org/w/api.php?action=query&list=blocks&bkprop=id|user|by|timestamp|expiry|reason|range|flags&bklimit=max&bkusers=Tisane
+    #get_xml({:format => :xml, :action => :query, :list => :blocks, :bkusers => info[4], :bklimit => :max, :bkprop => 'id|user|by|timestamp|expiry|reason|range|flags' })
+    
+    #http://en.wikipedia.org/w/api.php?action=query&list=users&ususers=Tisane&usprop=blockinfo|groups|editcount|registration|emailable
+    #get_xml({:format => :xml, :action => :query, :list => :users, :ususers => info[4], :usprop => 'blockinfo|groups|editcount|registration|emailable' })
+    
+    #http://en.wikipedia.org/w/api.php?action=query&list=recentchanges&rcuser=Tisane&rcprop=user|comment|timestamp|title|ids|sizes|redirect|loginfo|flags
+    #get_xml({:format => :xml, :action => :query, :list => :recentchanges, :rcuser => info[4], :rcprop => 'user|comment|timestamp|title|ids|sizes|redirect|loginfo|flags' })
+    
+    #res = parse_xml(get_xml())
+    db_write!(
+      ['revision_id', 'account_creation', 'account_lifetime'],
+      [info[0]] + account
+    )
+  end
+  
+  def find_account_history info
+    #http://en.wikipedia.org/w/api.php?action=query&list=logevents&letitle=User:Tisane&lelimit=max <- actions taken to user
+    #http://en.wikipedia.org/w/api.php?action=query&list=logevents&letitle=User:Tisane&lelimit=max&letype=newusers
+    #res = parse_xml(get_xml({:format => :xml, :action => :query, :list => :logevents, :letitle => 'User:' + info[4], :lelimit => :max }))
+    xml = get_xml({:format => :xml, :action => :query, :list => :logevents, :letitle => 'User:' + info[4], :letype => :newusers })
+    res = parse_xml(xml)
+    if(res.first['logevents'].empty?) #for some reason, a bunch of users don't have this data
+      
+    end
+    create = Time.parse(res.first['logevents'].first['item'].first['timestamp'])
+    life = info[6] - create
+    
+    [create.to_i, life.to_i]
   end
 end

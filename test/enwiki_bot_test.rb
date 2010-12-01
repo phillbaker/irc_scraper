@@ -49,15 +49,29 @@ class EnWikiBotTest < Test::Unit::TestCase
   end
   
   def test_should_store?
-    #plain text version, without the true jobbies
+    #plain text version, without the true jobbies is not passed
     assert(!@bot.should_store?("[[Albert G. Brown]] http://en.wikipedia.org/w/index.php?diff=397580708&oldid=394909102 * Good Olfactory * (+53) added [[Category:Democratic Party United States Senators]] using [[WP:HC|HotCat]]"))
-    #with invisibles below:
+    #with invisibles below, is passed
     assert(@bot.should_store?("14[[07Amar Ben Belgacem14]]4 M10 02http://en.wikipedia.org/w/index.php?diff=392473902&oldid=391225974 5* 03SD5 5* (+226) 10fixes, added persondata, typos fixed: august 24 → August 24 using [[Project:AWB|AWB]]"))
   end
   
   def test_hear_calls
     #TODO needs to run in isolation
     assert(@bot.hear("14[[07Amar Ben Belgacem14]]4 M10 02http://en.wikipedia.org/w/index.php?diff=392473902&oldid=391225974 5* 03SD5 5* (+226) 10fixes, added persondata, typos fixed: august 24 → August 24 using [[Project:AWB|AWB]]"))
+  end
+  
+  def test_process_irc
+    #[[Lighting]] http://en.wikipedia.org/w/index.php?diff=399864542&oldid=399863488 * Jacqui998 * (+165) /* Lamps */ 
+    assert_equal(
+      ['Amar Ben Belgacem',
+        'M',
+        'http://en.wikipedia.org/w/index.php?diff=392473902&oldid=391225974',
+        'SD5',
+        '+226',
+        "fixes, added persondata, typos fixed: august 24 \342\206\222 August 24 using [[Project:AWB|AWB]]"
+      ], 
+      @bot.process_irc("14[[07Amar Ben Belgacem14]]4 M10 02http://en.wikipedia.org/w/index.php?diff=392473902&oldid=391225974 5* 03SD5 5* (+226) 10fixes, added persondata, typos fixed: august 24 → August 24 using [[Project:AWB|AWB]]")
+    )
   end
   
 end

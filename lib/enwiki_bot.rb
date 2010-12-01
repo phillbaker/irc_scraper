@@ -1,22 +1,19 @@
-#inheritance stuff
 require 'bot.rb'
 
 require 'author_detective.rb'
 require 'page_detective.rb'
 require 'revision_detective.rb'
+#require 'external_link_detective.rb' #TODO
 
 require 'rubygems'
 require 'sqlite3'
-
-#out
-require 'author_detective.rb'
 
 class EnWikiBot < Bot #TODO db.close
   
   attr_accessor :db
   
   def initialize(server, port, channel, password = '', bot_name = BOT_NAME)
-    if db_exists? bot_name
+    if db_exists? bot_name #TODO this really isn't clean
       db_open bot_name
     else
       @db = db_create!(bot_name)
@@ -25,17 +22,18 @@ class EnWikiBot < Bot #TODO db.close
     end
     db_init
     
+    @detectives = [AuthorDetective.new(@db), PageDetective.new(@db), RevisionDetective.new(@db)]
+    
     super(bot_name)
   end
   
   def hear(message)
     if should_store? message
       info = store! message
-      #call our other methods in threads and pass the primary id so that
-      #e.g.:  AuthorDetective.find_info(info)
-      AuthorDetective.investigate(info)
-      PageDetective.investigate(info)
-      RevisionDetective.investigate(info)
+      #TODO call our methods in other threads
+      @detectives.each do |detective|
+        detective.investigate(info)
+      end
     end
   end
   
@@ -44,15 +42,23 @@ class EnWikiBot < Bot #TODO db.close
     message =~ REVISION_REGEX #TODO this is silly, we should only scan this once...below, probably
   end
   
-  #returns primary_id, article_name, desc, url, user, byte_diff, timestamp, description
+  #returns primary_id (string), article_name (string), desc (string), url (string), user (string), byte_diff (int), timestamp (Time object), description (string)
   def store! message
-    fields = message.scan(REVISION_REGEX).first
-    time = Time.now.to_i
-    id = db_write! fields[0], fields[1], fields[2], fields[3], fields [4].to_i, time, fields[5]
+    fields = process_irc(message)
+    time = Time.now
+    fields[4] = fields[4].to_i #convert the byte diff to an int
+    id = db_write! fields[0], fields[1], fields[2], fields[3], fields[4], time.to_i, fields[5]
+    
     #return the info used to create this so we can just pass them in code instead of querying the db
-    [id, fields[0], fields[1], fields[2], fields[3], fields [4].to_i, time, fields[5]]
+    [id, fields[0], fields[1], fields[2], fields[3], fields[4], time, fields[5]]
   end
 
+  #given the irc announcement in the irc monitoring channel for en.wikipedia, this returns the different fields
+  def process_irc message
+    message.scan(REVISION_REGEX).first
+  end
+
+  #keep this separate, if we switch to mysql, this will need to be a different implementation
   def db_exists? db_name
     File.exists? db_name
   end
@@ -79,6 +85,7 @@ class EnWikiBot < Bot #TODO db.close
     @db.type_translation = true
   end
   
+  #article_name (string), desc (string), url (string), user (string), byte_diff int, ts (int), description
   def db_write! article_name, desc, url, user, byte_diff, ts, description
     statement = @db.prepare( %{
       INSERT INTO %s

@@ -32,5 +32,5 @@ end
 # This function parses the xml response from Wikipedia. If given the XMl, it will return a native ruby list of the structure.
 def parse_xml(xml)
   hash = XmlSimple.xml_in(xml)
-  hash['query'][0]['pages'] #return just the list of the pages
+  hash['query']#return just the results of the query
 end
