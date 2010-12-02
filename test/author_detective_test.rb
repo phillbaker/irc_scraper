@@ -22,12 +22,19 @@ class MediaWikiApiTest < Test::Unit::TestCase
   
   def test_find_account_history
     account_history = @detective.find_account_history(@info)
-    assert_equal([], account_history)
+    assert_equal([1233505878, 32334381], account_history)
   end
   
   def test_investigate
     @detective.setup_table()
     rownum = @detective.investigate(@info)
-    assert_equal(1, rownum)
+    assert_equal('1', rownum)
+  end
+  
+  def test_setup_table
+    #to test the sql of the table definition
+    assert_nothing_raised do
+      @detective.setup_table()
+    end
   end
 end

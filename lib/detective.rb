@@ -6,6 +6,7 @@ class Detective
   
   def initialize db
     @db = db
+    setup_table()
   end
   
   def table_name
@@ -57,7 +58,7 @@ class Detective
   end
   
   def setup_table
-    unless table_exists? table_name()
+    unless table_exists?(table_name())
       @db.execute_batch(sql_prefix() + sql_suffix())
     end
   end

@@ -14,9 +14,9 @@ class AuthorDetective < Detective
     Proc.new do
       <<-SQL
       id integer primary key autoincrement,
-      FOREIGN KEY(revision_id) REFERENCES irc_wikimedia_org_en_wikipedia(id),   --TODO this foreign table name probably shouldn't be hard coded, and these foreign keys probably won't be enforced b/c sqlite doesn't include it by default
+      revision_id integer,                                                      --foreign key to reference the original revision
       account_creation timestamp(20),                                           --this should be the entry in the logevents call, but if we exceed the max number of requests, we won't get it      block_count
-      account_lifetime integer                                                  --this is the lifetime of the account in seconds
+      account_lifetime integer,                                                 --this is the lifetime of the account in seconds
       --rights_grant_count                                                      
       --rights_removal_count
       --edits_last_second                                                       --want a figure to show recent activity do buckets instead
@@ -27,6 +27,7 @@ class AuthorDetective < Detective
       --edits_last_month
       --edits_last_year
       --total_edits
+      FOREIGN KEY(revision_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)    --these foreign keys probably won't be enforced b/c sqlite doesn't include it by default--TODO this foreign table name probably shouldn't be hard coded
 SQL
     end
   end
@@ -70,13 +71,20 @@ SQL
     #http://en.wikipedia.org/w/api.php?action=query&list=logevents&letitle=User:Tisane&lelimit=max <- actions taken to user
     #http://en.wikipedia.org/w/api.php?action=query&list=logevents&letitle=User:Tisane&lelimit=max&letype=newusers
     #res = parse_xml(get_xml({:format => :xml, :action => :query, :list => :logevents, :letitle => 'User:' + info[4], :lelimit => :max }))
-    xml = get_xml({:format => :xml, :action => :query, :list => :logevents, :letitle => 'User:' + info[4], :letype => :newusers })
+    
+    #http://en.wikipedia.org/w/api.php?action=query&list=users&ususers=1.2.3.4|Catrope|Vandal01|Bob&usprop=blockinfo|groups|editcount|registration|emailable
+    xml = get_xml({:format => :xml, :action => :query, :list => :users, :ususers => info[4], :usprop => 'blockinfo|groups|editcount|registration|emailable' })
     res = parse_xml(xml)
-    if(res.first['logevents'].empty?) #for some reason, a bunch of users don't have this data
-      
-    end
-    create = Time.parse(res.first['logevents'].first['item'].first['timestamp'])
+    
+    create = Time.parse(res.first['users'].first['user'].first['registration'])
     life = info[6] - create
+    
+    #TODO get the rest of this data: 
+    #<user name="Bob" editcount="4517" registration="2006-11-18T21:55:03Z" emailable="">
+    #        <groups>
+    #          <g>reviewer</g>
+    #        </groups>
+    #      </user>
     
     [create.to_i, life.to_i]
   end

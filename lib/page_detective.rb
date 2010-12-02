@@ -12,7 +12,8 @@ class PageDetective < Detective
     Proc.new do
       <<-SQL
       id integer primary key autoincrement,
-      FOREIGN KEY(revision_id) REFERENCES irc_wikimedia_org_en_wikipedia(id),   --TODO this probably shouldn't be hard coded
+      revision_id integer,                                                      --foreign key to reference the original revision
+      FOREIGN KEY(revision_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)   --TODO this table name probably shouldn't be hard coded
 SQL
     end
   end
