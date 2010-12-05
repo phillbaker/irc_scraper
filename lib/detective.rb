@@ -24,7 +24,7 @@ class Detective
 
   #main entry method for this class
   #should call db_write! to put results discovered during the investigation into the table
-  #info is a list of primary_id, article_name, desc, url, user, byte_diff, timestamp, description
+  #info is a list of primary_id, article_name, desc, rev_id (string), old_id (string), user, byte_diff, timestamp, description
   def investigate info
     raise NotImplementedError
   end

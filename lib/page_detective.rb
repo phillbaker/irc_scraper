@@ -12,21 +12,22 @@ class PageDetective < Detective
     Proc.new do
       <<-SQL
       id integer primary key autoincrement,
-      revision_id integer,                                                      --foreign key to reference the original revision
-      FOREIGN KEY(revision_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)   --TODO this table name probably shouldn't be hard coded
+      sample_id integer,                                                      --foreign key to reference the original revision
+      FOREIGN KEY(sample_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)   --TODO this table name probably shouldn't be hard coded
 SQL
     end
   end
 
   #info is a list: 
-  # 0: primary_id (string), 
+  # 0: sample_id (string), 
   # 1: article_name (string), 
   # 2: desc (string), 
-  # 3: url (string), 
-  # 4: user (string), 
-  # 5: byte_diff (int), 
-  # 6: timestamp (Time object), 
-  # 7: description (string)
+  # 3: rev_id (string),
+  # 4: old_id (string)
+  # 5: user (string), 
+  # 6: byte_diff (int), 
+  # 7: timestamp (Time object), 
+  # 8: description (string)
   def investigate info
     #TODO raise NotImplementedError
   end

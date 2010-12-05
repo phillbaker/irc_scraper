@@ -5,7 +5,8 @@ require 'enwiki_bot.rb'
 class EnWikiBotTest < Test::Unit::TestCase
   
   def setup
-    @bot = EnWikiBot.new('server', 6667, 'channel', 'password')
+    @db = SQLite3::Database.new(":memory:")
+    @bot = EnWikiBot.new('server', 6667, 'channel', 'password', 'test_bot', @db)
     #@bot.register Proc.new { |message| @said << message }, Proc.new { |action| @done << action } 
     #@said = []
     #@done = []
@@ -13,10 +14,12 @@ class EnWikiBotTest < Test::Unit::TestCase
   
   def test_instantiation
     assert @bot
+    #assert_equal("server_channel", @bot.table_name)
+    #assert_equal(@bot.db, @db)
   end
   
   def test_name
-    assert_equal BOT_NAME, @bot.name
+    assert_equal "test_bot", @bot.name
   end
   
   def test_db_exists?
@@ -33,7 +36,7 @@ class EnWikiBotTest < Test::Unit::TestCase
     @bot.db.table_info('server_channel') do |row|
       schema += "\n" + row['name']
     end
-    assert_equal(TABLE_SCHEMA_PREFIX + 'server_channel' + TABLE_SCHEMA_SUFFIX, schema)
+    assert_equal("\nid\narticle_name\ndesc\nrevision_id\nold_id\nuser\nbyte_diff\nts\ndescription", schema)
   end
   
   def test_db_open
@@ -45,7 +48,16 @@ class EnWikiBotTest < Test::Unit::TestCase
   end
   
   def test_db_write!
-    #TODO
+    res = @bot.db_write!('Amar Ben Belgacem',
+      'M',
+      '392473902'.to_i,
+      '391225974'.to_i,
+      'SD5',
+      '+226'.to_i,
+      Time.now.to_i,
+      "fixes, added persondata, typos fixed: august 24 \342\206\222 August 24 using [[Project:AWB|AWB]]"
+    )
+    assert_equal("1", res)
   end
   
   def test_should_store?
@@ -60,12 +72,33 @@ class EnWikiBotTest < Test::Unit::TestCase
     assert(@bot.hear("14[[07Amar Ben Belgacem14]]4 M10 02http://en.wikipedia.org/w/index.php?diff=392473902&oldid=391225974 5* 03SD5 5* (+226) 10fixes, added persondata, typos fixed: august 24 → August 24 using [[Project:AWB|AWB]]"))
   end
   
+  def test_store!
+    res = @bot.store!("14[[07Amar Ben Belgacem14]]4 M10 02http://en.wikipedia.org/w/index.php?diff=392473902&oldid=391225974 5* 03SD5 5* (+226) 10fixes, added persondata, typos fixed: august 24 → August 24 using [[Project:AWB|AWB]]")
+    expected = [1,
+      'Amar Ben Belgacem',
+      'M',
+      392473902,
+      391225974,
+      'SD5',
+      226,
+      Time.now,
+      "fixes, added persondata, typos fixed: august 24 \342\206\222 August 24 using [[Project:AWB|AWB]]"
+    ]
+    expected.each_with_index do |o,i|
+      assert_equal(
+        o, res[i]
+      )
+    end
+    assert_equal(expected.size(), o.size())
+  end
+  
   def test_process_irc
     #[[Lighting]] http://en.wikipedia.org/w/index.php?diff=399864542&oldid=399863488 * Jacqui998 * (+165) /* Lamps */ 
     assert_equal(
       ['Amar Ben Belgacem',
         'M',
-        'http://en.wikipedia.org/w/index.php?diff=392473902&oldid=391225974',
+        '392473902',#'http://en.wikipedia.org/w/index.php?diff=392473902&oldid=391225974',
+        '391225974',
         'SD5',
         '+226',
         "fixes, added persondata, typos fixed: august 24 \342\206\222 August 24 using [[Project:AWB|AWB]]"

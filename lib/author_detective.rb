@@ -14,7 +14,9 @@ class AuthorDetective < Detective
     Proc.new do
       <<-SQL
       id integer primary key autoincrement,
-      revision_id integer,                                                      --foreign key to reference the original revision
+      sample_id integer,                                                      --foreign key to reference the original revision
+      
+      --these are all true contemporaneous of the edit, post or pre-edit may be different
       account_creation timestamp(20),                                           --this should be the entry in the logevents call, but if we exceed the max number of requests, we won't get it      block_count
       account_lifetime integer,                                                 --this is the lifetime of the account in seconds
       --rights_grant_count                                                      
@@ -27,20 +29,21 @@ class AuthorDetective < Detective
       --edits_last_month
       --edits_last_year
       --total_edits
-      FOREIGN KEY(revision_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)    --these foreign keys probably won't be enforced b/c sqlite doesn't include it by default--TODO this foreign table name probably shouldn't be hard coded
+      FOREIGN KEY(sample_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)    --these foreign keys probably won't be enforced b/c sqlite doesn't include it by default--TODO this foreign table name probably shouldn't be hard coded
 SQL
     end
   end
 
   #info is a list: 
-  # 0: primary_id (string), 
+  # 0: sample_id (string), 
   # 1: article_name (string), 
   # 2: desc (string), 
-  # 3: url (string), 
-  # 4: user (string), 
-  # 5: byte_diff (int), 
-  # 6: timestamp (Time object), 
-  # 7: description (string)
+  # 3: rev_id (string),
+  # 4: old_id (string)
+  # 5: user (string), 
+  # 6: byte_diff (int), 
+  # 7: timestamp (Time object), 
+  # 8: description (string)
   def investigate info
     #TODO if we already have data for a user, should we look it up?
     
@@ -62,7 +65,7 @@ SQL
     
     #res = parse_xml(get_xml())
     db_write!(
-      ['revision_id', 'account_creation', 'account_lifetime'],
+      ['sample_id', 'account_creation', 'account_lifetime'],
       [info[0]] + account
     )
   end
@@ -73,11 +76,11 @@ SQL
     #res = parse_xml(get_xml({:format => :xml, :action => :query, :list => :logevents, :letitle => 'User:' + info[4], :lelimit => :max }))
     
     #http://en.wikipedia.org/w/api.php?action=query&list=users&ususers=1.2.3.4|Catrope|Vandal01|Bob&usprop=blockinfo|groups|editcount|registration|emailable
-    xml = get_xml({:format => :xml, :action => :query, :list => :users, :ususers => info[4], :usprop => 'blockinfo|groups|editcount|registration|emailable' })
+    xml = get_xml({:format => :xml, :action => :query, :list => :users, :ususers => info[5], :usprop => 'blockinfo|groups|editcount|registration|emailable' })
     res = parse_xml(xml)
     
     create = Time.parse(res.first['users'].first['user'].first['registration'])
-    life = info[6] - create
+    life = info[7] - create
     
     #TODO get the rest of this data: 
     #<user name="Bob" editcount="4517" registration="2006-11-18T21:55:03Z" emailable="">
