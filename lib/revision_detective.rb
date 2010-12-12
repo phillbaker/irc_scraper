@@ -12,9 +12,16 @@ class RevisionDetective < Detective
     Proc.new do
       <<-SQL
       id integer primary key autoincrement,
-      sample_id integer,                                                      --foreign key to reference the original revision
-      --need to have: external_link_count integer,                            --number of external links in the revision diff text
-      FOREIGN KEY(sample_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)   --TODO this table name probably shouldn't be hard coded
+      revision_id integer,                              --foreign key to reference the original revision
+      --is_minor boolean,
+      timestamp timestamp,
+      user string,
+      comment string,
+      size integer,
+      rev_content string,
+      --tags 
+      FOREIGN KEY(revision_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)   --TODO this table name probably shouldn't be hard coded
+      --FOREIGN KEY(user) REFERENCES irc_wikimedia_org_en_wikipedia(user) --TODO
 SQL
     end
   end
@@ -30,7 +37,36 @@ SQL
   # 7: timestamp (Time object), 
   # 8: description (string)
   def investigate info
-    #TODO raise NotImplementedError
+    
+    #http://en.wikipedia.org/w/api.php?action=query&prop=revisions&revid=info[3]&rvprop=timestamp|user|comment|size&rvlimit&vdiffto=prev
+    
+    revinfo = find_revision_info(info)
+    
+    db_write!(
+      ['revision_id', 'timestamp', 'user', 'comment', 'size', 'rev_content'],
+      [info[0]] + revinfo
+    )
+  end
+  
+  def find_revision_info info
+    
+    xml = get_xml({:format => :xml, :action => :query, :prop => :revisions, :revids => info[3], :rvprop => 'timestamp|user|comment|size', :rvdiffto => :prev})
+    res = parse_xml(xml)
+
+    timestamp = Time.parse(res.first['pages'].first['page'].first['revisions'].first['rev'].first['timestamp'])
+
+    user = res.first['pages'].first['page'].first['revisions'].first['rev'].first['user']
+
+    comment = res.first['pages'].first['page'].first['revisions'].first['rev'].first['comment']
+
+    size = res.first['pages'].first['page'].first['revisions'].first['rev'].first['size']
+
+    rev_content = res.first['pages'].first['page'].first['revisions'].first['rev'].first['diff']
+
+    #TODO get the rest of this data - tags, is_minor, number of links in the revision:
+    
+    [timestamp, user.to_s, comment.to_s, size.to_i, rev_content.to_s]
+    
   end
   
 end
