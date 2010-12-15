@@ -17,18 +17,19 @@ class AuthorDetective < Detective
       sample_id integer,                                                      --foreign key to reference the original revision
       
       --these are all true contemporaneous of the edit, post or pre-edit may be different
-      account_creation timestamp(20),                                           --this should be the entry in the logevents call, but if we exceed the max number of requests, we won't get it      block_count
+      account_creation timestamp(20),                                           --this should be the entry in the logevents call, but if we exceed the max number of requests, we won't get it
       account_lifetime integer,                                                 --this is the lifetime of the account in seconds
+      edits_last_second integer,                                                       --want a figure to show recent activity do buckets instead
+      edits_last_minute integer,
+      edits_last_hour integer,
+      edits_last_day integer,
+      edits_last_week integer,
+      edits_last_month integer,
+      edits_last_year integer,
+      total_edits integer,
       --rights_grant_count                                                      
       --rights_removal_count
-      --edits_last_second                                                       --want a figure to show recent activity do buckets instead
-      --edits_last_minute
-      --edits_last_hour
-      --edits_last_day
-      --edits_last_week
-      --edits_last_month
-      --edits_last_year
-      --total_edits
+      --groups string,
       FOREIGN KEY(sample_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)    --these foreign keys probably won't be enforced b/c sqlite doesn't include it by default--TODO this foreign table name probably shouldn't be hard coded
 SQL
     end
@@ -65,7 +66,7 @@ SQL
     
     #res = parse_xml(get_xml())
     db_write!(
-      ['sample_id', 'account_creation', 'account_lifetime'],
+      ['sample_id', 'account_creation', 'account_lifetime', 'total_edits', 'edits_last_second', 'edits_last_minute', 'edits_last_hour', 'edits_last_day', 'edits_last_week', 'edits_last_month', 'edits_last_year'],
       [info[0]] + account
     )
   end
@@ -80,7 +81,34 @@ SQL
     res = parse_xml(xml)
     
     create = Time.parse(res.first['users'].first['user'].first['registration'])
+    editcount = res.first['users'].first['user'].first['editcount']
+    groups = res.first['users'].first['user'].first['groups']
+
     life = info[7] - create
+    
+    #http://en.wikipedia.org/w/api.php?action=query&list=usercontribs&ucuser=YurikBot
+    
+    second_ago = info[7]-1
+    minute_ago = info[7]-60
+    hour_ago = info[7]-(60*60)
+    day_ago = info[7]-(60*60)*24
+    week_ago = info[7]- 60*60*24*7
+    month_ago = info[7]- 60*60*24*30
+    year_ago = info[7]- 60*60*24*365
+
+    times = [second_ago, minute_ago, hour_ago, day_ago, week_ago, month_ago, year_ago]
+    i = 0
+    editcount_bucket = [0,0,0,0,0,0,0]
+    times.each do |time|
+    	       xml2 = get_xml({:format => :xml, :action => :query, :list => :usercontribs, :ucuser => info[5], :ucstart => info[7].strftime("%Y-%m-%dT%H:%M:%SZ"), :ucend => time.strftime("%Y-%m-%dT%H:%M:%SZ"), :uclimit => 500})
+    	       res2 = parse_xml(xml2)
+    	       edits = res2.first['usercontribs'].first['item']
+	       if (edits != nil)
+	       	  editcount_bucket[i] = edits.length.to_i
+	       end
+    	       i = i+1
+    end
+
     
     #TODO get the rest of this data: 
     #<user name="Bob" editcount="4517" registration="2006-11-18T21:55:03Z" emailable="">
@@ -89,6 +117,6 @@ SQL
     #        </groups>
     #      </user>
     
-    [create.to_i, life.to_i]
+    [create.to_i, life.to_i, editcount.to_i] + editcount_bucket
   end
 end
