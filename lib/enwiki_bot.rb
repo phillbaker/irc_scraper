@@ -1,9 +1,9 @@
 require 'bot.rb'
 
 require 'author_detective.rb'
-require 'external_link_detective.rb'
 require 'revision_detective.rb'
 require 'page_detective.rb'
+require 'external_link_detective.rb'
 
 require 'rubygems'
 require 'sqlite3'
@@ -27,7 +27,7 @@ class EnWikiBot < Bot #TODO db.close
     end
     db_init
     
-    @detectives = [AuthorDetective.new(@db), ExternalLinkDetective.new(@db), RevisionDetective.new(@db), PageDetective.new(@db)]
+    @detectives = [AuthorDetective.new(@db), ExternalLinkDetective.new(@db), RevisionDetective.new(@db), PageDetective.new(@db), ExternalLinkDetective.new(@db)]
     
     super(bot_name)
   end
