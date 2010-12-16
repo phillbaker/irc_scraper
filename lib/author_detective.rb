@@ -15,20 +15,25 @@ class AuthorDetective < Detective
       <<-SQL
       id integer primary key autoincrement,
       sample_id integer,                                                      --foreign key to reference the original revision
-      
-      --these are all true contemporaneous of the edit, post or pre-edit may be different
-      account_creation timestamp(20),                                           --this should be the entry in the logevents call, but if we exceed the max number of requests, we won't get it      block_count
+      account_creation timestamp(20),                                           --this should be the entry in the logevents call, but if we exceed the max number of requests, we won't get it
       account_lifetime integer,                                                 --this is the lifetime of the account in seconds
+      edits_last_second integer,                                                       --want a figure to show recent activity do buckets instead
+      edits_last_minute integer,
+      edits_last_hour integer,
+      edits_last_day integer,
+      edits_last_week integer,
+      edits_last_month integer,
+      edits_last_year integer,
+      total_edits integer,
       --rights_grant_count                                                      
       --rights_removal_count
-      --edits_last_second                                                       --want a figure to show recent activity do buckets instead
-      --edits_last_minute
-      --edits_last_hour
-      --edits_last_day
-      --edits_last_week
-      --edits_last_month
-      --edits_last_year
-      --total_edits
+      groups string,
+      num_times_blocked integer,
+      block_id integer,
+      blocked_by string,
+      block_ts timestamp,
+      block_expiry timestamp,
+      block_reason text,
       FOREIGN KEY(sample_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)    --these foreign keys probably won't be enforced b/c sqlite doesn't include it by default--TODO this foreign table name probably shouldn't be hard coded
 SQL
     end
@@ -54,20 +59,23 @@ SQL
     #http://en.wikipedia.org/w/api.php?action=query&list=logevents&leuser=Tisane&lelimit=max <- actions taken by user
     #get_xml({:format => :xml, :action => :query, :list => :logevents, :leuser => info[4], :lelimit => :max })
     
-    #http://en.wikipedia.org/w/api.php?action=query&list=blocks&bkprop=id|user|by|timestamp|expiry|reason|range|flags&bklimit=max&bkusers=Tisane
-    #get_xml({:format => :xml, :action => :query, :list => :blocks, :bkusers => info[4], :bklimit => :max, :bkprop => 'id|user|by|timestamp|expiry|reason|range|flags' })
-    
-    #http://en.wikipedia.org/w/api.php?action=query&list=users&ususers=Tisane&usprop=blockinfo|groups|editcount|registration|emailable
-    #get_xml({:format => :xml, :action => :query, :list => :users, :ususers => info[4], :usprop => 'blockinfo|groups|editcount|registration|emailable' })
-    
     #http://en.wikipedia.org/w/api.php?action=query&list=recentchanges&rcuser=Tisane&rcprop=user|comment|timestamp|title|ids|sizes|redirect|loginfo|flags
     #get_xml({:format => :xml, :action => :query, :list => :recentchanges, :rcuser => info[4], :rcprop => 'user|comment|timestamp|title|ids|sizes|redirect|loginfo|flags' })
     
     #res = parse_xml(get_xml())
+   
+   if (account[11]=0)
     db_write!(
-      ['sample_id', 'account_creation', 'account_lifetime'],
+      ['sample_id', 'account_creation', 'account_lifetime', 'total_edits', 'edits_last_second', 'edits_last_minute', 'edits_last_hour', 'edits_last_day', 'edits_last_week', 'edits_last_month', 'edits_last_year', 'groups', 'num_times_blocked'],
       [info[0]] + account
     )
+   else
+     block_info = find_block_info(blockinfo)
+         db_write!(
+      ['sample_id', 'account_creation', 'account_lifetime', 'total_edits', 'edits_last_second', 'edits_last_minute', 'edits_last_hour', 'edits_last_day', 'edits_last_week', 'edits_last_month', 'edits_last_year', 'groups', 'num_times_blocked', 'block_id','blocked_by','block_ts','block_expiry','block_reason'],
+      [info[0]] + account
+    )
+   end
   end
   
   def find_account_history info
@@ -76,19 +84,71 @@ SQL
     #res = parse_xml(get_xml({:format => :xml, :action => :query, :list => :logevents, :letitle => 'User:' + info[4], :lelimit => :max }))
     
     #http://en.wikipedia.org/w/api.php?action=query&list=users&ususers=1.2.3.4|Catrope|Vandal01|Bob&usprop=blockinfo|groups|editcount|registration|emailable
-    xml = get_xml({:format => :xml, :action => :query, :list => :users, :ususers => info[5], :usprop => 'blockinfo|groups|editcount|registration|emailable' })
+    xml = get_xml({:format => :xml, :action => :query, :list => :users, :ususers => info[5], :usprop => 'groups|editcount|registration' })
     res = parse_xml(xml)
     
     create = Time.parse(res.first['users'].first['user'].first['registration'])
+    editcount = res.first['users'].first['user'].first['editcount']
+    groups = res.first['users'].first['user'].first['groups']
+    if(groups!=nil)
+	groups = groups.first['g'].join("##")
+    else
+	groups = ""
+    end
+    		 
     life = info[7] - create
     
-    #TODO get the rest of this data: 
-    #<user name="Bob" editcount="4517" registration="2006-11-18T21:55:03Z" emailable="">
-    #        <groups>
-    #          <g>reviewer</g>
-    #        </groups>
-    #      </user>
+    #http://en.wikipedia.org/w/api.php?action=query&list=usercontribs&ucuser=YurikBot
     
-    [create.to_i, life.to_i]
+    second_ago = info[7]-1
+    minute_ago = info[7]-60
+    hour_ago = info[7]-(60*60)
+    day_ago = info[7]-(60*60)*24
+    week_ago = info[7]- 60*60*24*7
+    month_ago = info[7]- 60*60*24*30
+    year_ago = info[7]- 60*60*24*365
+
+    times = [second_ago, minute_ago, hour_ago, day_ago, week_ago, month_ago, year_ago]
+    i = 0
+    editcount_bucket = [0,0,0,0,0,0,0]
+    times.each do |time|
+    	       xml2 = get_xml({:format => :xml, :action => :query, :list => :usercontribs, :ucuser => info[5], :ucstart => info[7].strftime("%Y-%m-%dT%H:%M:%SZ"), :ucend => time.strftime("%Y-%m-%dT%H:%M:%SZ"), :uclimit => 500})
+    	       res2 = parse_xml(xml2)
+    	       edits = res2.first['usercontribs'].first['item']
+	       if (edits != nil)
+	       	  editcount_bucket[i] = edits.length.to_i
+	       end
+    	       i = i+1
+    end
+
+    #http://en.wikipedia.org/w/api.php?action=query&list=blocks&bkprop=id|user|by|timestamp|expiry|reason&bklimit=max&bkusers=Tisane 
+    xml3 = get_xml({:format => :xml, :action => :query, :list => :blocks, :bkusers => info[5], :bklimit => :max, :bkprop => 'id|user|by|timestamp|expiry|reason' })
+    res3 = parse_xml(xml3)
+    blockinfo = res3.first['blocks'].first['block']
+    blocktimes = 0
+    if(blockinfo != nil)
+	blocktimes =  blockinfo.length.to_i
+	blockinfo = find_block_info(blockinfo)
+    else
+	blockinfo = []
+    end
+    
+    [create.to_i, life.to_i, editcount.to_i] + editcount_bucket + [groups.to_s, blocktimes] + blockinfo
+
+  end
+
+  #block_id integer,
+  #blocked_by string,
+  #block_ts timestamp,
+  #block_expiry timestamp,
+  #block_reason text,
+  def find_block_info blockinfo
+      expiry = blockinfo.first['expiry']
+      if (expiry == "infinity")
+      	 expiry = nil
+      else
+	expiry = Time.parse(expiry)
+      end
+      [blockinfo.first['id'].to_i, blockinfo.first['by'].to_s, Time.parse(blockinfo.first['timestamp']), expiry, blockinfo.first['reason'].to_s]
   end
 end
