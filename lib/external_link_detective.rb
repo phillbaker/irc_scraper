@@ -43,7 +43,17 @@ SQL
   end	
   
   def find_link_info info
+    #take popularity from: http://www.trendingtopics.org/page/[article_name]; links to csv's with daily and hourly popularity
+    #http://stats.grok.se/en/top <- lists top pages
+    #http://stats.grok.se/en/[year][month]/[article_name]
+    #also http://toolserver.org/~emw/wikistats/?p1=Barack_Obama&project1=en&from=12/10/2007&to=12/11/2010&plot=1
+    #http://wikitech.wikimedia.org/view/Main_Page
+    #http://lists.wikimedia.org/pipermail/wikitech-l/2007-December/035435.html
+    #http://wiki.wikked.net/wiki/Wikimedia_statistics/Daily
+    #http://aws.amazon.com/datasets/Encyclopedic/4182
+    #https://github.com/datawrangling/trendingtopics
 
+    #this is what we're going to do: get all external links for prev_id and all external links for curr_id and diff them, any added => new extrnal links to find
     #http://en.wikipedia.org/w/api.php?action=query&prop=extlinks&revids=800129
     xml= get_xml({:format => :xml, :action => :query, :prop => :extlinks, :revids => info[3]})
     res = parse_xml(xml)
