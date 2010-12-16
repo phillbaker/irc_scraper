@@ -1,5 +1,6 @@
 require 'detective.rb'
 require 'mediawiki_api.rb'
+require 'time'
 
 class PageDetective < Detective
   def table_name
@@ -13,6 +14,12 @@ class PageDetective < Detective
       <<-SQL
       id integer primary key autoincrement,
       sample_id integer,                                                      --foreign key to reference the original revision
+      --page_placement integer,
+           --byte number where revision starts
+      page_last_revision_id integer,
+      page_last_revison_time timestamp(20),
+           --time of last revision on this page
+      --popularity
       FOREIGN KEY(sample_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)   --TODO this table name probably shouldn't be hard coded
 SQL
     end
@@ -29,7 +36,17 @@ SQL
   # 7: timestamp (Time object), 
   # 8: description (string)
   def investigate info
-    #TODO raise NotImplementedError
+    page = find_page_history(info)
+    db_write!(
+      ['sample_id', 'page_last_revison_id', 'page_last_revision_time'],
+      [info[0]] + page
+    )
+  end
+
+  def find_page_history info
+    xml = get_xml({:format => :xml, :action => :query, :prop => :revisions, :titles => info[1], :rvlimit => '2', :rvprop => 'ids|timestamp' })
+    res = parse_xml(xml)
+    [res.first['pages'].first['page'].first['revisions'].last['rev'].first['revid'], Time.parse(res.first['pages'].first['page'].first['revisions'].last['rev'].first['timestamp'])]
   end
   
 end
