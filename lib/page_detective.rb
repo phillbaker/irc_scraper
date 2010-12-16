@@ -1,5 +1,6 @@
 require 'detective.rb'
 require 'mediawiki_api.rb'
+require 'time'
 
 class PageDetective < Detective
   def table_name
