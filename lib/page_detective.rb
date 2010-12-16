@@ -45,7 +45,7 @@ SQL
   def find_page_history info
     xml = get_xml({:format => :xml, :action => :query, :prop => :revisions, :titles => info[1], :rvlimit => '2', :rvprop => 'ids|timestamp' })
     res = parse_xml(xml)
-    [res.first['pages'].first['page'].first['revisions'].last['rev'].first['ids'], res.first['pages'].first['page'].first['revisions'].last['rev'].first['timestamp']]
+    [res.first['pages'].first['page'].first['revisions'].last['rev'].first['revid'], Time.parse(res.first['pages'].first['page'].first['revisions'].last['rev'].first['timestamp'])]
   end
   
 end
