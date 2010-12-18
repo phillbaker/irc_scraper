@@ -60,6 +60,8 @@ class MediaWikiApiTest < Test::Unit::TestCase
 
   def test_block_info
       account_history =  @detective.find_account_history(@info2)
-      assert_equal([1, 764932, "Picaroon", "[[Wikipedia:Requests for checkuser/Case/W. Frank|sockpuppet of W. Frank]]"], [account_history[11], account_history[12], account_history[13], account_history[16]])
+      assert_equal([1, 764932, "Picaroon", nil, "[[Wikipedia:Requests for checkuser/Case/W. Frank|sockpuppet of W. Frank]]"], [account_history[11], account_history[12], account_history[13], account_history[15], account_history[16]])
+      
   end
+
 end
