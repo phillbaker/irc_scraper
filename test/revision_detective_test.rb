@@ -18,6 +18,7 @@ class MediaWikiApiTest < Test::Unit::TestCase
       ts timestamp(20),
       description text)')
     @detective = RevisionDetective.new(@db)
+    
     @info = [1,
       'Amar Ben Belgacem',
       'M',
@@ -51,9 +52,12 @@ class MediaWikiApiTest < Test::Unit::TestCase
     assert_equal([0], [revinfo[5]])
   end
 
-  def test_link_info
+  def test_link_info_links_added
     revinfo = @detective.find_revision_info(@info2)
     assert_equal([10], [revinfo[6]])
+  end
+  
+  def test_link_info_no_links_added
     revinfo = @detective.find_revision_info(@info)
     assert_equal([0], [revinfo[6]])
   end

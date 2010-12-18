@@ -76,26 +76,31 @@ SQL
     xml2= get_xml({:format => :xml, :action => :query, :prop => :extlinks, :revids => info[3]})
     res2 = parse_xml(xml2)
     links_new = res2.first['pages'].first['page'].first['extlinks']
-    if(links_new!=nil)
-	links_new = links_new.first['el']
+    if(links_new != nil)
+	    links_new = links_new.first['el']
     else
-	links_new = []
+	    links_new = []
     end
 
     xml2= get_xml({:format => :xml, :action => :query, :prop => :extlinks, :revids => info[4]})
     res2 = parse_xml(xml2)
     links_old = res2.first['pages'].first['page'].first['extlinks']
 
-    if(links_old!=nil)
-	links_old = links_old.first['el']
+    if(links_old != nil)
+	    links_old = links_old.first['el']
     else
-	links_old = []
+	    links_old = []
     end
+    #linkdiff = links_new - links_old #this doesn't work
+    linkdiff = []
+    links_new.each do |link|
+      unless links_old.include?(link)
+        linkdiff << link
+      end
+    end
+    
 
-    linkdiff = links_new - links_old
-    
     [timestamp, user.to_s, comment.to_s, size.to_i, rev_content.to_s, is_minor.to_i, linkdiff.length.to_i]
-    
   end
   
 end
