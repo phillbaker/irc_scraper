@@ -81,6 +81,10 @@ SQL
     else
 	    links_new = []
     end
+    #convert the array of hashes into just an array of links
+    links_new.collect! do |link|
+      link['content']
+    end
 
     xml2= get_xml({:format => :xml, :action => :query, :prop => :extlinks, :revids => info[4]})
     res2 = parse_xml(xml2)
@@ -91,13 +95,19 @@ SQL
     else
 	    links_old = []
     end
-    #linkdiff = links_new - links_old #this doesn't work
-    linkdiff = []
-    links_new.each do |link|
-      unless links_old.include?(link)
-        linkdiff << link
-      end
+    links_old.collect! do |link|
+      link['content']
     end
+    
+    linkdiff = links_new - links_old #this doesn't work, links_new a hash or array?
+    #links_new.first['content']
+
+    #linkdiff = []
+    #links_new.each do |link|
+    #  unless links_old.include?(link)
+    #    linkdiff << link
+    #  end
+    #end
     
 
     [timestamp, user.to_s, comment.to_s, size.to_i, rev_content.to_s, is_minor.to_i, linkdiff.length.to_i]
