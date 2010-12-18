@@ -36,4 +36,17 @@ class MediaWikiApiTest < Test::Unit::TestCase
  Time.parse("Sun Oct 17 12:22:14 UTC 2010")], [pageinfo[0], pageinfo[1]])
   end
 
+  def test_investigate
+    @detective.setup_table()
+    rownum = @detective.investigate(@info)
+    assert_equal(1, rownum)
+  end
+  
+  def test_setup_table
+    #to test the sql of the table definition
+    assert_nothing_raised do
+      @detective.setup_table()
+    end
+  end
+
 end
