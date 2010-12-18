@@ -25,7 +25,8 @@ class AuthorDetective < Detective
       edits_last_month integer,
       edits_last_year integer,
       total_edits integer,
-      --rights_grant_count                                                      
+      --rights string,
+      --rights_grant_count                                                   
       --rights_removal_count
       groups string,
       num_times_blocked integer,
@@ -34,6 +35,7 @@ class AuthorDetective < Detective
       block_ts timestamp,
       block_expiry timestamp,
       block_reason text,
+      user_talkpg_text text,
       FOREIGN KEY(sample_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)    --these foreign keys probably won't be enforced b/c sqlite doesn't include it by default--TODO this foreign table name probably shouldn't be hard coded
 SQL
     end
@@ -65,14 +67,11 @@ SQL
     #res = parse_xml(get_xml())
    
    if (account[11]=0)
-    db_write!(
-      ['sample_id', 'account_creation', 'account_lifetime', 'total_edits', 'edits_last_second', 'edits_last_minute', 'edits_last_hour', 'edits_last_day', 'edits_last_week', 'edits_last_month', 'edits_last_year', 'groups', 'num_times_blocked'],
+    db_write!(['sample_id', 'account_creation', 'account_lifetime', 'total_edits', 'edits_last_second', 'edits_last_minute', 'edits_last_hour', 'edits_last_day', 'edits_last_week', 'edits_last_month', 'edits_last_year', 'groups', 'num_times_blocked', 'user_talkpg_text'],
       [info[0]] + account
     )
    else
-     block_info = find_block_info(blockinfo)
-         db_write!(
-      ['sample_id', 'account_creation', 'account_lifetime', 'total_edits', 'edits_last_second', 'edits_last_minute', 'edits_last_hour', 'edits_last_day', 'edits_last_week', 'edits_last_month', 'edits_last_year', 'groups', 'num_times_blocked', 'block_id','blocked_by','block_ts','block_expiry','block_reason'],
+     db_write!(['sample_id', 'account_creation', 'account_lifetime', 'total_edits', 'edits_last_second', 'edits_last_minute', 'edits_last_hour', 'edits_last_day', 'edits_last_week', 'edits_last_month', 'edits_last_year', 'groups', 'num_times_blocked', 'block_id','blocked_by','block_ts','block_expiry','block_reason', 'user_talkpg_text'],
       [info[0]] + account
     )
    end
@@ -83,13 +82,15 @@ SQL
     #http://en.wikipedia.org/w/api.php?action=query&list=logevents&letitle=User:Tisane&lelimit=max&letype=newusers
     #res = parse_xml(get_xml({:format => :xml, :action => :query, :list => :logevents, :letitle => 'User:' + info[4], :lelimit => :max }))
     
-    #http://en.wikipedia.org/w/api.php?action=query&list=users&ususers=1.2.3.4|Catrope|Vandal01|Bob&usprop=blockinfo|groups|editcount|registration|emailable
-    xml = get_xml({:format => :xml, :action => :query, :list => :users, :ususers => info[5], :usprop => 'groups|editcount|registration' })
+    #http://en.wikipedia.org/w/api.php?action=query&list=users&ususers=1.2.3.4|Catrope|Vandal01|Bob&usprop=groups|editcount|registration|emailable
+    xml = get_xml({:format => :xml, :action => :query, :list => :users, :ususers => info[5], :usprop => 'groups|editcount|registration|emailable' })
     res = parse_xml(xml)
     
     create = Time.parse(res.first['users'].first['user'].first['registration'])
     editcount = res.first['users'].first['user'].first['editcount']
     groups = res.first['users'].first['user'].first['groups']
+    #emailable = res.first['users'].first['user'].first['emailable']    
+    
     if(groups!=nil)
 	groups = groups.first['g'].join("##")
     else
@@ -133,7 +134,15 @@ SQL
 	blockinfo = []
     end
     
-    [create.to_i, life.to_i, editcount.to_i] + editcount_bucket + [groups.to_s, blocktimes] + blockinfo
+    usertalkpg_title = "User:"+info[5]
+    xml4 = get_xml({:format => :xml, :action => :query, :prop => :revisions, :titles => usertalkpg_title, :rvprop => 'content'})
+    res4 = parse_xml(xml4)
+
+    source = res4.first['pages'].first['page'].first['revisions'].first['rev'].first['content']
+
+    #Need to get info on rights
+    
+    [create.to_i, life.to_i, editcount.to_i] + editcount_bucket + [groups.to_s, blocktimes] + blockinfo + ["''''hello'''''"]
 
   end
 
