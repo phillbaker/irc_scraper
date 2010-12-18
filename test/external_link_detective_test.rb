@@ -63,4 +63,17 @@ class MediaWikiApiTest < Test::Unit::TestCase
  "http://sports.espn.go.com/mlb/recap?gameId=301022113"], arr)
   end
 
+  def test_investigate
+    @detective.setup_table()
+    rownum = @detective.investigate(@info)
+    assert_equal(1, rownum)
+  end
+  
+  def test_setup_table
+    #to test the sql of the table definition
+    assert_nothing_raised do
+      @detective.setup_table()
+    end
+  end
+
 end
