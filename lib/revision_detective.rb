@@ -109,8 +109,8 @@ SQL
     #  end
     #end
     
-
-    [timestamp, user.to_s, comment.to_s, size.to_i, rev_content.to_s, is_minor.to_i, linkdiff.length.to_i]
+    [timestamp.to_i, user.to_s, comment.to_s, size.to_i, rev_content.to_s, is_minor.to_i, linkdiff.length.to_i]
+    
   end
   
 end

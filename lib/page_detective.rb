@@ -15,11 +15,11 @@ class PageDetective < Detective
       id integer primary key autoincrement,
       sample_id integer,                                                      --foreign key to reference the original revision
       --page_placement integer,
-           --byte number where revision starts
+      --byte number where revision starts
       page_last_revision_id integer,
-      page_last_revison_time timestamp(20),
-           --time of last revision on this page
+      page_last_revison_time timestamp(20),               --time of last revision on this page
       --popularity
+      page_text text,
       FOREIGN KEY(sample_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)   --TODO this table name probably shouldn't be hard coded
 SQL
     end
@@ -38,15 +38,26 @@ SQL
   def investigate info
     page = find_page_history(info)
     db_write!(
-      ['sample_id', 'page_last_revison_id', 'page_last_revision_time'],
+      ['sample_id', 'page_last_revison_id', 'page_last_revision_time', 'page_text'],
       [info[0]] + page
     )
   end
 
   def find_page_history info
-    xml = get_xml({:format => :xml, :action => :query, :prop => :revisions, :titles => info[1], :rvlimit => '2', :rvprop => 'ids|timestamp' })
+    #http://en.wikipedia.org/w/api.php?action=query&prop=revisions&revids=342098230&rvprop=timestamp|user|comment|content
+    xml = get_xml({:format => :xml, :action => :query, :prop => :revisions, :revids => info[4], :rvprop => 'ids|timestamp|user|comment|content'})
     res = parse_xml(xml)
-    [res.first['pages'].first['page'].first['revisions'].last['rev'].first['revid'], Time.parse(res.first['pages'].first['page'].first['revisions'].last['rev'].first['timestamp'])]
+
+    xml = get_xml({:format => :xml, :action => :query, :prop => :revisions, :revids => info[3], :rvprop => 'content'})
+    res2 = parse_xml(xml)
+
+    source = res2.first['pages'].first['page'].first['revisions'].first['rev'].first['content'].to_s
+  
+
+    [res.first['pages'].first['page'].first['revisions'].last['rev'].first['revid'], Time.parse(res.first['pages'].first['page'].first['revisions'].last['rev'].first['timestamp']).to_i, source]
+
+    #http://en.wikipedia.org/w/api.php?action=query&prop=revisions&revids=230948209&rvprop=content
+    
   end
   
 end
