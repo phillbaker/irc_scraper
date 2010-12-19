@@ -38,7 +38,7 @@ class MediaWikiApiTest < Test::Unit::TestCase
   def test_investigate
     @detective.setup_table()
     rownum = @detective.investigate(@info)
-    assert_equal(1, rownum)
+    assert_equal(1.to_s, rownum)
   end
   
   def test_setup_table

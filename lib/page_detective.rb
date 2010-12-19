@@ -17,7 +17,7 @@ class PageDetective < Detective
       --page_placement integer,
       --byte number where revision starts
       page_last_revision_id integer,
-      page_last_revison_time timestamp(20),               --time of last revision on this page
+      page_last_revision_time timestamp(20),               --time of last revision on this page
       --popularity
       page_text text,
       FOREIGN KEY(sample_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)   --TODO this table name probably shouldn't be hard coded
@@ -38,7 +38,7 @@ SQL
   def investigate info
     page = find_page_history(info)
     db_write!(
-      ['sample_id', 'page_last_revison_id', 'page_last_revision_time', 'page_text'],
+      ['sample_id', 'page_last_revision_id', 'page_last_revision_time', 'page_text'],
       [info[0]] + page
     )
   end
