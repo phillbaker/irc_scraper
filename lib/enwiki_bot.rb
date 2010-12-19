@@ -27,7 +27,7 @@ class EnWikiBot < Bot #TODO db.close
     end
     db_init
     
-    @detectives = [RevisionDetective, AuthorDetective, ExternalLinkDetective, PageDetective]
+    @detectives = [RevisionDetective.new(@db), AuthorDetective.new(@db), ExternalLinkDetective.new(@db), PageDetective.new(@db)]
     
     super(bot_name)
   end
@@ -37,11 +37,11 @@ class EnWikiBot < Bot #TODO db.close
       info = store! message
       #TODO call our methods in other threads
       #TODO build in some error handling/logging to see if threads die/blow up and what we missed
-      @detectives.each do |clazz|
-        db = clazz.new(@db)
-        Process.fork do
-          db.investigate(info)
-        end
+      @detectives.each do |detective|
+        #detective = clazz
+        #Process.fork do
+        detective.investigate(info)
+        #end
       end
     end
   end
