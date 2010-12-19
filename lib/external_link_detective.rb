@@ -1,6 +1,7 @@
 require 'detective.rb'
 require 'mediawiki_api.rb'
-require 'open-uri'
+require 'uri'
+require 'net/http'
 
 class ExternalLinkDetective < Detective
   def table_name
@@ -17,7 +18,6 @@ class ExternalLinkDetective < Detective
       link string,
       source text,
       FOREIGN KEY(revision_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)   --TODO this table name probably shouldn't be hard coded
-      --FOREIGN KEY(user) REFERENCES irc_wikimedia_org_en_wikipedia(user) --TODO
 SQL
     end
   end
@@ -37,8 +37,8 @@ SQL
     linkarray = find_link_info(info)
 
     linkarray.each do |linkentry|
-    	db_write!(['revision_id', 'link', 'source'],
-	[info[0], linkentry["link"], linkentry["source"]])
+      db_write!(['revision_id', 'link', 'source'],
+	    [info[0], linkentry["link"], linkentry["source"]])
     end	
   end	
   
@@ -59,9 +59,12 @@ SQL
     res = parse_xml(xml)
     links_new = res.first['pages'].first['page'].first['extlinks']
     if(links_new!=nil)
-	links_new = links_new.first['el']
+	    links_new = links_new.first['el']
     else
-	links_new = []
+	    links_new = []
+    end
+    links_new.collect! do |link|
+      link['content']
     end
 
     xml= get_xml({:format => :xml, :action => :query, :prop => :extlinks, :revids => info[4]})
@@ -69,9 +72,12 @@ SQL
     links_old = res.first['pages'].first['page'].first['extlinks']
 
     if(links_old!=nil)
-	links_old = links_old.first['el']
+	    links_old = links_old.first['el']
     else
-	links_old = []
+	    links_old = []
+    end
+    links_old.collect! do |link|
+      link['content']
     end
 
     linkdiff = links_new - links_old
@@ -79,7 +85,9 @@ SQL
     linkarray = Array.new(linkdiff.length, Hash.new)
     i=0
     linkdiff.each do |link|
-       source = open(link['content']){|f|f.read}
+       source = Net::HTTP.get URI.parse(link)
+       #TODO do a check for the size and type-content of it before we pull it
+       #binary files we probably don't need to grab and things larger than a certain size we don't want to grab
        linkarray[i]={"link" => link['content'], "source" => source}
        i = i+1
     end
