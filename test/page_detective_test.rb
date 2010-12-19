@@ -32,8 +32,7 @@ class MediaWikiApiTest < Test::Unit::TestCase
   
   def test_find_page_info
     pageinfo = @detective.find_page_history(@info)
-    assert_equal(["391225974",
- Time.parse("Sun Oct 17 12:22:14 UTC 2010")], [pageinfo[0], pageinfo[1]])
+    assert_equal(["391225974",1287318134], [pageinfo[0], pageinfo[1]])
   end
 
   def test_investigate
