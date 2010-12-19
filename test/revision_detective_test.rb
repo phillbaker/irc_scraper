@@ -43,7 +43,7 @@ class MediaWikiApiTest < Test::Unit::TestCase
   
   def test_find_revision_info
     revinfo = @detective.find_revision_info(@info)
-    assert_equal([Time.parse('Sat Oct 23 20:59:04 UTC 2010'), 'SD5', "fixes, added persondata, typos fixed: august 24 \342\206\222 August 24 using [[Project:AWB|AWB]]", 6776, 1], [revinfo[0], revinfo[1], revinfo[2], revinfo[3], revinfo[5]])
+    assert_equal([1287867544, 'SD5', "fixes, added persondata, typos fixed: august 24 \342\206\222 August 24 using [[Project:AWB|AWB]]", 6776, 1], [revinfo[0], revinfo[1], revinfo[2], revinfo[3], revinfo[5]])
   end
 
   def test_minor_info
