@@ -52,8 +52,9 @@ SQL
     res2 = parse_xml(xml)
 
     source = res2.first['pages'].first['page'].first['revisions'].first['rev'].first['content'].to_s
+  
 
-    [res.first['pages'].first['page'].first['revisions'].last['rev'].first['revid'], Time.parse(res.first['pages'].first['page'].first['revisions'].last['rev'].first['timestamp']), source]
+    [res.first['pages'].first['page'].first['revisions'].last['rev'].first['revid'], Time.parse(res.first['pages'].first['page'].first['revisions'].last['rev'].first['timestamp']).to_i, source]
 
     #http://en.wikipedia.org/w/api.php?action=query&prop=revisions&revids=230948209&rvprop=content
     
