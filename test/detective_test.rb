@@ -44,4 +44,10 @@ class DetectiveTest < Test::Unit::TestCase
     assert(1, @detective.db_write!(['id'], [1]))
   end
   
+  def test_db_write_quotes
+    @detective.setup_table()
+    assert(1, @detective.db_write!(['id', 'value'], [1, "te'xt"]))
+    assert(2, @detective.db_write!(['id', 'value'], [2, "te''xt"]))
+  end
+  
 end

@@ -18,7 +18,7 @@ class Detective
   #return a proc that defines the columns used by this detective
   def columns
     Proc.new do
-      "id integer primary key"
+      "id integer primary key, value text"
     end
   end
 
@@ -35,7 +35,12 @@ class Detective
     column_sql = columns.join(', ')
     #wrap string data types in single quotes, otherwise let it be (ie Numeric should stay numeric)
     data_quoted = data.collect do |o|
-      o.is_a?(String) ? "'#{o}'" : o
+      ret = o
+      if o.is_a?(String)
+        o = o.gsub(/'/, "''") #need to escape single quotes, not c-style for sqlite, but two single quotes
+        ret = "'#{o}'"
+      end
+      ret
     end
     data_sql = data_quoted.join(', ')
     sql = %{INSERT INTO %s ( %s ) VALUES ( %s ) } % [table_name(), column_sql, data_sql]
