@@ -35,11 +35,15 @@ SQL
   def investigate info
         
     linkarray = find_link_info(info)
-
+    
+    rownum = 0
     linkarray.each do |linkentry|
-      db_write!(['revision_id', 'link', 'source'],
-	    [info[0], linkentry["link"], linkentry["source"]])
+      rownum = db_write!(
+        ['revision_id', 'link', 'source'],
+	      [info[0], linkentry["link"], linkentry["source"]]
+	    )
     end	
+    rownum
   end	
   
   def find_link_info info
@@ -82,14 +86,12 @@ SQL
 
     linkdiff = links_new - links_old
     
-    linkarray = Array.new(linkdiff.length, Hash.new)
-    i=0
+    linkarray = []
     linkdiff.each do |link|
        source = Net::HTTP.get URI.parse(link)
        #TODO do a check for the size and type-content of it before we pull it
        #binary files we probably don't need to grab and things larger than a certain size we don't want to grab
-       linkarray[i]={"link" => link['content'], "source" => source}
-       i = i+1
+       linkarray << {"link" => link, "source" => source}
     end
     linkarray
   end
