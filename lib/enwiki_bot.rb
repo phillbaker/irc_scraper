@@ -36,6 +36,7 @@ class EnWikiBot < Bot #TODO db.close
     if should_store? message
       info = store! message
       #TODO call our methods in other threads
+      #TODO build in some error handling/logging to see if threads die/blow up and what we missed
       @detectives.each do |clazz|
         db = clazz.new(@db)
         Proccess.fork do
