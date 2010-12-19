@@ -27,7 +27,7 @@ class EnWikiBot < Bot #TODO db.close
     end
     db_init
     
-    @detectives = [AuthorDetective, ExternalLinkDetective, RevisionDetective, PageDetective, ExternalLinkDetective]
+    @detectives = [RevisionDetective, AuthorDetective, ExternalLinkDetective, PageDetective]
     
     super(bot_name)
   end
@@ -38,7 +38,7 @@ class EnWikiBot < Bot #TODO db.close
       #TODO call our methods in other threads
       @detectives.each do |clazz|
         db = clazz.new(@db)
-        Proccess.fork do
+        Process.fork do
           db.investigate(info)
         end
       end
