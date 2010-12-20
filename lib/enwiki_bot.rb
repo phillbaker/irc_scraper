@@ -27,6 +27,7 @@ class EnWikiBot < Bot #TODO db.close
     end
     db_init
     
+    Thread.abort_on_exception = true #set this so that if there's an exception on any of these threads, everything quits - good for initial debugging
     @detectives = [RevisionDetective.new(@db), AuthorDetective.new(@db), ExternalLinkDetective.new(@db), PageDetective.new(@db)]
     
     super(bot_name)
@@ -36,11 +37,14 @@ class EnWikiBot < Bot #TODO db.close
     if should_store? message
       info = store! message
       #TODO call our methods in other threads
+      ## so should the detective classes be static, so there's no chance of trying to access shared resources at the same time?
+      #
       #TODO build in some error handling/logging to see if threads die/blow up and what we missed
       @detectives.each do |detective|
         #detective = clazz
+        #Thread.new do
         #Process.fork do
-        detective.investigate(info)
+          #detective.investigate(info)
         #end
       end
     end
@@ -69,7 +73,7 @@ class EnWikiBot < Bot #TODO db.close
     fields[3] = fields[3].to_i
     fields[5] = fields[5].to_i
     
-    id = db_write! fields[0], fields[1], fields[2], fields[3], fields[4], fields[5], time.to_i, fields[6]
+    id = db_write! [fields[0], fields[1], fields[2], fields[3], fields[4], fields[5], time.to_i, fields[6]]
     
     #return the info used to create this so we can just pass them in code instead of querying the db
     [id.to_i, fields[0], fields[1], fields[2], fields[3], fields[4], fields[5], time, fields[6]]
@@ -118,12 +122,18 @@ class EnWikiBot < Bot #TODO db.close
     @db.type_translation = true
   end
   
-  def db_write! article_name, desc, rev_id, old_id, user, byte_diff, ts, description
+  #args should be: article_name, desc, rev_id, old_id, user, byte_diff, ts, description
+  def db_write! args
+    #TODO put this in rescue blocks so that if something chokes, we don't completely die, and put in a new table (or maybe a column for logging errors?)
+    args.collect! do |o|
+      o.is_a?(String) ? SQLite3::Database.quote(o) : o
+    end
+    
     sql = %{
       INSERT INTO %s
       (article_name, desc, revision_id, old_id, user, byte_diff, ts, description)
       VALUES ('%s', '%s', '%d', %d, '%s', %d, %d, '%s')
-    } % [@table_name, article_name, desc, rev_id, old_id, user, byte_diff, ts, description]
+    } % ([@table_name] + args)#article_name, desc, rev_id, old_id, user, byte_diff, ts, description
     statement = @db.prepare(sql)
     statement.execute!
     
