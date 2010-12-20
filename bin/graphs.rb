@@ -44,7 +44,7 @@ puts 'Content-type: text/html'
 puts "<html><head><title>Spam Detection on Wikipedia stats page</title></head><body><h1>Spam Detection on Wikipedia SummaryStatistics</h1><p><img src=\"#{url}\"/></p></body><!--I see you!--></html>"
 
 #TODO look at the counts for each table, and other stats...
-#look at namespace 0 revisions specifically
+#look at namespace 0 revisions specifically (and in templates? (namespace 10?))
 #TODO look at counts of specific items: good link additions, bad link additions
 
 

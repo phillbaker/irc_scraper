@@ -32,8 +32,8 @@ class IRCClient
     
     @listening_thread = Thread.new do
       until @socket.closed? do
-        message = @socket.readline #(nil)
-        log message
+        message = @socket.readline
+        #log message
         if message =~ /^PING :(.*)$/
           send "PONG #{$1}"
         elsif message =~ /^ERROR :Bad password/
@@ -43,9 +43,11 @@ class IRCClient
           begin
             @bot.hear $1
           rescue Exception
-            log $!.to_s + $@.to_s
+            log message
+            log $!.to_s + $@.to_s #This also just logs all the exceptions thrown in dealing with stuff...
           end
         else
+          log message
           #doesn't really matter we still log it, we just don't need to respond to it
         end
       end

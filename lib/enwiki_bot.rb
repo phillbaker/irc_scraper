@@ -13,6 +13,11 @@ class EnWikiBot < Bot #TODO db.close
   attr_accessor :db
   
   def initialize(server, port, channel, password = '', bot_name = BOT_NAME, db = nil)
+    #server = 'irc.wikimedia.org' if server.nil?
+    #channel = 'en.wikipedia' if channel.nil?
+    #puts server + channel
+    #@log_file = File.new(IRC_LOG_FILE_PATH, "a")
+    
     @table_name = server.gsub(/\./, '_') + '_' + channel.gsub(/\./, '_') #TODO this isn't really sanitized...use URI.parse
 
     if db
@@ -27,32 +32,37 @@ class EnWikiBot < Bot #TODO db.close
     end
     db_init
     
-    Thread.abort_on_exception = true #set this so that if there's an exception on any of these threads, everything quits - good for initial debugging
+    #Thread.abort_on_exception = true #set this so that if there's an exception on any of these threads, everything quits - good for initial debugging
     @detectives = [RevisionDetective.new(@db), AuthorDetective.new(@db), ExternalLinkDetective.new(@db), PageDetective.new(@db)]
     
     super(bot_name)
   end
   
   def hear(message)
-    if should_store? message
-      info = store! message
+    if should_store?(message)
+      info = store!(message)
       #TODO call our methods in other threads
       ## so should the detective classes be static, so there's no chance of trying to access shared resources at the same time?
       #
       #TODO build in some error handling/logging to see if threads die/blow up and what we missed
       @detectives.each do |detective|
         #detective = clazz
-        #Thread.new do
         #Process.fork do
-          #detective.investigate(info)
-        #end
+        begin
+          Thread.new do
+            detective.investigate(info)
+          end
+        rescue => e
+        #  log("ERROR: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.first}")
+          throw Exception.new("ERROR: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.first}")
+        end
       end
     end
   end
   
   def should_store? message
     #keep messages that match our format...eventually this will be limited to certain messages, should we spin out a thread per message?
-    message =~ REVISION_REGEX #TODO this is silly, we should only scan this once...below, probably
+    message =~ /\00314\[\[\00307(.*)\00314\]\]\0034\ (.*)\00310\ \00302(.*)\003\ \0035\*\003\ \00303(.*)\003\ \0035\*\003\ \((.*)\)\ \00310(.*)\003/ #TODO this is silly, we should only scan this once...below, probably
   end
   
   #returns:
@@ -66,7 +76,11 @@ class EnWikiBot < Bot #TODO db.close
   # 7: timestamp (Time object), 
   # 8: description (string)
   def store! message
+    fields = []
     fields = process_irc(message)
+    #TODO for some reason, a bunch of messages get cut off and we don't get the entire thing...but then it shouldn't appear here...the regexp above should clear it...
+    raise Exception.new("ERROR: message didn't parse") if fields == nil
+    
     time = Time.now
     
     fields[2] = fields[2].to_i
@@ -88,10 +102,11 @@ class EnWikiBot < Bot #TODO db.close
   # 5: byte_diff (string), 
   # 6: description (string)
   def process_irc message
-    res = message.scan(REVISION_REGEX).first
-    ids = res[2].scan(/diff=([0-9]+)&oldid=([0-9]+)/).first #parse the url to get the revid and the oldid
-    res[2] = ids.last
-    res.insert(2, ids.first)
+    res = message.scan(/\00314\[\[\00307(.*)\00314\]\]\0034\s(.*)\00310\s\00302.*diff=([0-9]+)&oldid=([0-9]+)\s*\003\s*\0035\*\003\s*\00303(.*)\003\s*\0035\*\003\s*\((.*)\)\s*\00310(.*)\003/).first
+    #ids = res[2].scan(//).first #parse the url to get the revid and the oldid
+    #res[2] = ids.last
+    #res.insert(2, ids.first)
+    #res.delete_at(3)
     res
   end
 
@@ -121,6 +136,11 @@ class EnWikiBot < Bot #TODO db.close
   def db_init
     @db.type_translation = true
   end
+  
+  #def log message
+  #  @log_file.puts "#{@name} received @ #{Time.now.strftime('%Y%m%d %H:%M.%S')}:  #{message}"
+  #  @log_file.flush
+  #end
   
   #args should be: article_name, desc, rev_id, old_id, user, byte_diff, ts, description
   def db_write! args

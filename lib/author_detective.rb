@@ -15,9 +15,9 @@ class AuthorDetective < Detective
       <<-SQL
       id integer primary key autoincrement,
       sample_id integer,                                                      --foreign key to reference the original revision
-      account_creation timestamp(20),                                           --this should be the entry in the logevents call, but if we exceed the max number of requests, we won't get it
-      account_lifetime integer,                                                 --this is the lifetime of the account in seconds
-      edits_last_second integer,                                                       --want a figure to show recent activity do buckets instead
+      account_creation timestamp(20),                                         --this should be the entry in the logevents call, but if we exceed the max number of requests, we won't get it
+      account_lifetime integer,                                               --this is the lifetime of the account in seconds
+      edits_last_second integer,                                              --want a figure to show recent activity do buckets instead
       edits_last_minute integer,
       edits_last_hour integer,
       edits_last_day integer,
@@ -28,7 +28,7 @@ class AuthorDetective < Detective
       --rights string,
       --rights_grant_count                                                   
       --rights_removal_count
-      groups string,
+      groups string,                                                          --this should also cover the rights...
       num_times_blocked integer,
       block_id integer,
       blocked_by string,
@@ -67,11 +67,48 @@ SQL
     #res = parse_xml(get_xml())
    
    if (account[11]=0)
-    db_write!(['sample_id', 'account_creation', 'account_lifetime', 'total_edits', 'edits_last_second', 'edits_last_minute', 'edits_last_hour', 'edits_last_day', 'edits_last_week', 'edits_last_month', 'edits_last_year', 'groups', 'num_times_blocked', 'user_talkpg_text'],
+    db_write!(  
+      [
+        'sample_id', 
+        'account_creation', 
+        'account_lifetime', 
+        'total_edits', 
+        'edits_last_second', 
+        'edits_last_minute', 
+        'edits_last_hour', 
+        'edits_last_day', 
+        'edits_last_week', 
+        'edits_last_month', 
+        'edits_last_year', 
+        'groups', 
+        'num_times_blocked', 
+        'user_talkpg_text'
+      ],
       [info[0]] + account
     )
    else
-     db_write!(['sample_id', 'account_creation', 'account_lifetime', 'total_edits', 'edits_last_second', 'edits_last_minute', 'edits_last_hour', 'edits_last_day', 'edits_last_week', 'edits_last_month', 'edits_last_year', 'groups', 'num_times_blocked', 'block_id','blocked_by','block_ts','block_expiry','block_reason', 'user_talkpg_text'],
+     db_write!(
+      [
+        'sample_id', 
+        'account_creation', 
+        'account_lifetime', 
+        'total_edits', 
+        'edits_last_second', 
+        'edits_last_minute', 
+        'edits_last_hour', 
+        'edits_last_day', 
+        'edits_last_week', 
+        'edits_last_month', 
+        'edits_last_year', 
+        'groups', 
+        'num_times_blocked', 
+        'block_id',
+        'blocked_by',
+        'block_ts',
+        'block_expiry',
+        'block_reason', 
+        'user_talkpg_text'
+      ],
       [info[0]] + account
     )
    end
@@ -92,9 +129,9 @@ SQL
     #emailable = res.first['users'].first['user'].first['emailable']    
     
     if(groups!=nil)
-	groups = groups.first['g'].join("##")
+	    groups = groups.first['g'].join("##")
     else
-	groups = ""
+	    groups = ""
     end
     		 
     life = info[7] - create
@@ -111,15 +148,15 @@ SQL
 
     times = [second_ago, minute_ago, hour_ago, day_ago, week_ago, month_ago, year_ago]
     i = 0
-    editcount_bucket = [0,0,0,0,0,0,0]
+    editcount_bucket = [0] * 7 #7 0's in an array
     times.each do |time|
-    	       xml2 = get_xml({:format => :xml, :action => :query, :list => :usercontribs, :ucuser => info[5], :ucstart => info[7].strftime("%Y-%m-%dT%H:%M:%SZ"), :ucend => time.strftime("%Y-%m-%dT%H:%M:%SZ"), :uclimit => 500})
-    	       res2 = parse_xml(xml2)
-    	       edits = res2.first['usercontribs'].first['item']
-	       if (edits != nil)
-	       	  editcount_bucket[i] = edits.length.to_i
-	       end
-    	       i = i+1
+      xml2 = get_xml({:format => :xml, :action => :query, :list => :usercontribs, :ucuser => info[5], :ucstart => info[7].strftime("%Y-%m-%dT%H:%M:%SZ"), :ucend => time.strftime("%Y-%m-%dT%H:%M:%SZ"), :uclimit => 500})
+      res2 = parse_xml(xml2)
+      edits = res2.first['usercontribs'].first['item']
+      if (edits != nil)
+   	    editcount_bucket[i] = edits.length.to_i
+      end
+      i = i+1
     end
 
     #http://en.wikipedia.org/w/api.php?action=query&list=blocks&bkprop=id|user|by|timestamp|expiry|reason&bklimit=max&bkusers=Tisane 
@@ -128,10 +165,10 @@ SQL
     blockinfo = res3.first['blocks'].first['block']
     blocktimes = 0
     if(blockinfo != nil)
-	blocktimes =  blockinfo.length.to_i
-	blockinfo = find_block_info(blockinfo)
+	    blocktimes =  blockinfo.length.to_i
+	    blockinfo = find_block_info(blockinfo)
     else
-	blockinfo = []
+	    blockinfo = [] #empty array cause we ignore it above
     end
     
     usertalkpg_title = "User:"+info[5]
@@ -142,8 +179,7 @@ SQL
 
     #Need to get info on rights
     
-    [create.to_i, life.to_i, editcount.to_i] + editcount_bucket + [groups.to_s, blocktimes] + blockinfo + ["''''hello'''''"]
-
+    [create.to_i, life.to_i, editcount.to_i] + editcount_bucket + [groups.to_s, blocktimes] + blockinfo + [source]
   end
 
   #block_id integer,
@@ -152,12 +188,12 @@ SQL
   #block_expiry timestamp,
   #block_reason text,
   def find_block_info blockinfo
-      expiry = blockinfo.first['expiry']
-      if (expiry == "infinity")
-      	 expiry = nil
-      else
-	expiry = Time.parse(expiry)
-      end
-      [blockinfo.first['id'].to_i, blockinfo.first['by'].to_s, Time.parse(blockinfo.first['timestamp']), expiry, blockinfo.first['reason'].to_s]
+    expiry = blockinfo.first['expiry']
+    if (expiry == "infinity")
+    	 expiry = nil
+    else
+      expiry = Time.parse(expiry)
+    end
+    [blockinfo.first['id'].to_i, blockinfo.first['by'].to_s, Time.parse(blockinfo.first['timestamp']), expiry, blockinfo.first['reason'].to_s]
   end
 end

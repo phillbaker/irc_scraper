@@ -21,6 +21,7 @@ class RevisionDetective < Detective
       rev_content string,
       num_links_added integer,
       namespace string,
+      only_link boolean,
       --tags 
       FOREIGN KEY(revision_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)   --TODO this table name probably shouldn't be hard coded
       --FOREIGN KEY(user) REFERENCES irc_wikimedia_org_en_wikipedia(user) --TODO
@@ -54,7 +55,7 @@ SQL
     
     xml = get_xml({:format => :xml, :action => :query, :prop => :revisions, :revids => info[3], :rvprop => 'ids|tags|flagged|timestamp|user|comment|size|flags', :rvdiffto => :prev})
     res = parse_xml(xml)
-
+    
     rxml = res.first['pages'].first['page'].first['revisions'].first['rev'].first
     timestamp = find_timestamp(rxml)
     user = find_user(rxml)
@@ -97,18 +98,9 @@ SQL
       link['content']
     end
 
-    linkdiff = links_new - links_old #this doesn't work, links_new a hash or array?
-    #links_new.first['content']
-
-    #linkdiff = []
-    #links_new.each do |link|
-    #  unless links_old.include?(link)
-    #    linkdiff << link
-    #  end
-    #end
+    linkdiff = links_new - links_old
 
     [timestamp.to_i, user.to_s, comment.to_s, size.to_i, rev_content.to_s, is_minor.to_i, linkdiff.length.to_i, namespace]
-    
   end
   
   #rxml = ruby-ified xml

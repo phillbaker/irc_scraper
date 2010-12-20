@@ -56,13 +56,6 @@ opts.each do |opt, arg|
       password = arg
   end
 end
-if server.nil? 
-  puts "The required --server parameter was missing."
-  RDoc::usage
-elsif channel.nil?
-  puts "The required --channel parameter was missing."
-  RDoc::usage
-end
 if File.exist?(PID_FILE_PATH)
   puts "Error: cannot start a bot. A pid.txt file was found. A bot may be already running."
   exit(1)

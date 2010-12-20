@@ -47,6 +47,7 @@ SQL
   end	
   
   def find_link_info info
+    #this is actually 'page' stuff
     #take popularity from: http://www.trendingtopics.org/page/[article_name]; links to csv's with daily and hourly popularity
     #http://stats.grok.se/en/top <- lists top pages
     #http://stats.grok.se/en/[year][month]/[article_name]
@@ -56,6 +57,10 @@ SQL
     #http://wiki.wikked.net/wiki/Wikimedia_statistics/Daily
     #http://aws.amazon.com/datasets/Encyclopedic/4182
     #https://github.com/datawrangling/trendingtopics
+
+    #link popularity/safety stuff:
+    #http://code.google.com/apis/safebrowsing/
+    #http://groups.google.com/group/google-safe-browsing-api/browse_thread/thread/b711ba69a4ecbb2f/29aa959a3a28a0bd?#29aa959a3a28a0bd
 
     #this is what we're going to do: get all external links for prev_id and all external links for curr_id and diff them, any added => new extrnal links to find
     #http://en.wikipedia.org/w/api.php?action=query&prop=extlinks&revids=800129
