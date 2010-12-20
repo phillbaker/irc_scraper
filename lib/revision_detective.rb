@@ -20,6 +20,7 @@ class RevisionDetective < Detective
       size integer,
       rev_content string,
       num_links_added integer,
+      namespace string,
       --tags 
       FOREIGN KEY(revision_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)   --TODO this table name probably shouldn't be hard coded
       --FOREIGN KEY(user) REFERENCES irc_wikimedia_org_en_wikipedia(user) --TODO
@@ -44,42 +45,39 @@ SQL
     revinfo = find_revision_info(info)
     
     db_write!(
-      ['revision_id', 'timestamp', 'user', 'comment', 'size', 'rev_content', 'is_minor', 'num_links_added'],
+      ['revision_id', 'timestamp', 'user', 'comment', 'size', 'rev_content', 'is_minor', 'num_links_added', 'namespace'],
       [info[0]] + revinfo
     )
   end
   
   def find_revision_info info
     
-    xml = get_xml({:format => :xml, :action => :query, :prop => :revisions, :revids => info[3], :rvprop => 'timestamp|user|comment|size|flags', :rvdiffto => :prev})
+    xml = get_xml({:format => :xml, :action => :query, :prop => :revisions, :revids => info[3], :rvprop => 'ids|tags|flagged|timestamp|user|comment|size|flags', :rvdiffto => :prev})
     res = parse_xml(xml)
 
-    timestamp = Time.parse(res.first['pages'].first['page'].first['revisions'].first['rev'].first['timestamp'])
+    rxml = rxml.first['pages'].first['page'].first['revisions'].first['rev'].first
+    timestamp = find_timestamp(rxml)
+    user = find_user(rxml)
+    comment = find_comment(rxml)
+    size = find_size(rxml)
+    rev_content = find_content(rxml)
+    flag = find_flag(rxml)
+    namespace = find_flag(res)
 
-    user = res.first['pages'].first['page'].first['revisions'].first['rev'].first['user']
-
-    comment = res.first['pages'].first['page'].first['revisions'].first['rev'].first['comment']
-
-    size = res.first['pages'].first['page'].first['revisions'].first['rev'].first['size']
-
-    rev_content = res.first['pages'].first['page'].first['revisions'].first['rev'].first['diff']
-
-    flag = res.first['pages'].first['page'].first['revisions'].first['rev'].first['minor']
-
-     if (flag=="")
-       is_minor = 1
-     else
-       is_minor = 0
-     end
+    if (flag=="")
+      is_minor = 1
+    else
+     is_minor = 0
+    end
 
     #http://en.wikipedia.org/w/api.php?action=query&prop=extlinks&revids=800129
     xml2= get_xml({:format => :xml, :action => :query, :prop => :extlinks, :revids => info[3]})
     res2 = parse_xml(xml2)
     links_new = res2.first['pages'].first['page'].first['extlinks']
     if(links_new != nil)
-	    links_new = links_new.first['el']
+      links_new = links_new.first['el']
     else
-	    links_new = []
+      links_new = []
     end
     #convert the array of hashes into just an array of links
     links_new.collect! do |link|
@@ -91,14 +89,14 @@ SQL
     links_old = res2.first['pages'].first['page'].first['extlinks']
 
     if(links_old != nil)
-	    links_old = links_old.first['el']
+      links_old = links_old.first['el']
     else
-	    links_old = []
+      links_old = []
     end
     links_old.collect! do |link|
       link['content']
     end
-    
+
     linkdiff = links_new - links_old #this doesn't work, links_new a hash or array?
     #links_new.first['content']
 
@@ -108,9 +106,38 @@ SQL
     #    linkdiff << link
     #  end
     #end
+
+    [timestamp.to_i, user.to_s, comment.to_s, size.to_i, rev_content.to_s, is_minor.to_i, linkdiff.length.to_i, namespace]
     
-    [timestamp.to_i, user.to_s, comment.to_s, size.to_i, rev_content.to_s, is_minor.to_i, linkdiff.length.to_i]
-    
+  end
+  
+  #rxml = ruby-ified xml
+  def find_timestamp rxml
+    Time.parse(.first['timestamp'])
+  end
+  
+  def find_user rxml
+    rxml.first['pages'].first['page'].first['revisions'].first['rev'].first['user']
+  end
+  
+  def find_comment rxml
+    rxml.first['pages'].first['page'].first['revisions'].first['rev'].first['comment']
+  end
+  
+  def find_size rxml
+    rxml.first['pages'].first['page'].first['revisions'].first['rev'].first['size']
+  end
+  
+  def find_content rxml
+    rxml.first['pages'].first['page'].first['revisions'].first['rev'].first['diff']
+  end
+  
+  def find_flag rxml
+    rxml.first['pages'].first['page'].first['revisions'].first['rev'].first['minor']
+  end
+  
+  def find_namespace rxml
+    rxml = res.first['pages'].first['ns']
   end
   
 end
