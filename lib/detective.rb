@@ -37,7 +37,7 @@ class Detective
     data_quoted = data.collect do |o|
       ret = o
       if o.is_a?(String)
-        o = o.gsub(/'/, "''") #need to escape single quotes, not c-style for sqlite, but two single quotes
+        o = SQLite3::Database.quote(o) #need to escape single quotes, not c-style for sqlite, but two single quotes
         ret = "'#{o}'"
       end
       ret
