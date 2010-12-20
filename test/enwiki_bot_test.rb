@@ -108,15 +108,15 @@ class EnWikiBotTest < Test::Unit::TestCase
       @bot.process_irc("14[[07Amar Ben Belgacem14]]4 M10 02http://en.wikipedia.org/w/index.php?diff=392473902&oldid=391225974 5* 03SD5 5* (+226) 10fixes, added persondata, typos fixed: august 24 → August 24 using [[Project:AWB|AWB]]")
     )
     assert_equal(
-      ['Amar Ben Belgacem',
-        'M',
-        '403305610',#http://en.wikipedia.org/w/index.php?oldid=403305610&rcid=415101687
-        '415101687',
-        'SD5',
-        '+226',
-        "fixes, added persondata, typos fixed: august 24 \342\206\222 August 24 using [[Project:AWB|AWB]]"
+      ['Category talk:Miami Modern Architecture',
+        'N',
+        '403307402',
+        '415103593',
+        'Koavf',
+        '+28',
+        "tag using [[Project:AWB|AWB]]"
       ], 
-      @bot.process_irc("14[[07Category talk:Late 19th and 20th Century Revivals architecture14]]4 N10 02http://en.wikipedia.org/w/index.php?oldid=403307215&rcid=415103398 5* 03Koavf 5* (+28) 10tag using [[Project:AWB|AWB]]")
+      @bot.process_irc("14[[07Category talk:Miami Modern Architecture14]]4 N10 02http://en.wikipedia.org/w/index.php?oldid=403307402&rcid=415103593 5* 03Koavf 5* (+28) 10tag using [[Project:AWB|AWB]]")
     )
     
   end

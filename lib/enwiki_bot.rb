@@ -102,11 +102,10 @@ class EnWikiBot < Bot #TODO db.close
   # 5: byte_diff (string), 
   # 6: description (string)
   def process_irc message
-    res = message.scan(/\00314\[\[\00307(.*)\00314\]\]\0034\s(.*)\00310\s\00302.*diff=([0-9]+)&oldid=([0-9]+)\s*\003\s*\0035\*\003\s*\00303(.*)\003\s*\0035\*\003\s*\((.*)\)\s*\00310(.*)\003/).first
-    #ids = res[2].scan(//).first #parse the url to get the revid and the oldid
-    #res[2] = ids.last
-    #res.insert(2, ids.first)
-    #res.delete_at(3)
+    res = message.scan(/\00314\[\[\00307(.*)\00314\]\]\0034\s+(.*)\00310\s+\00302.*(diff|oldid)=([0-9]+)&(oldid|rcid)=([0-9]+)\s*\003\s*\0035\*\003\s*\00303(.*)\003\s*\0035\*\003\s*\((.*)\)\s*\00310(.*)\003/).first
+    #get rid of the diff/oldid and oldid/rcid groups
+    res.delete_at(4)
+    res.delete_at(2)
     res
   end
 

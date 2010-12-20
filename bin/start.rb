@@ -56,14 +56,16 @@ opts.each do |opt, arg|
       password = arg
   end
 end
+
 if File.exist?(PID_FILE_PATH)
   puts "Error: cannot start a bot. A pid.txt file was found. A bot may be already running."
   exit(1)
 end
+
 pid = Process.fork do
   bot = EnWikiBot.new(server, port, channel, password) 
   irc = IRCClient.new(bot, server, port, channel, password)
-  trap("QUIT") { irc.close; exit }
+  trap("QUIT") { irc.close; exit } #TODO get Broken pipe (Errno::EPIPE) on bin/stop.rb
   while true do end
 end
 pid_file = File.open(PID_FILE_PATH, "w")
