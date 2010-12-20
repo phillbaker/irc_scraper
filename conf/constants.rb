@@ -1,4 +1,4 @@
-BOT_NAME = 'YASB'#'EnWikiScraperBot'
+BOT_NAME = 'EnWikiScraperBot'
 
 DB_SUFFIX = 'sqlite3'
 TABLE_SCHEMA_PREFIX = 'CREATE TABLE ' #TODO this stuff doesn't belong here, create a new sql folder or something, there's going to be a bunch of tables
