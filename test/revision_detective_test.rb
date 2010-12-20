@@ -19,16 +19,7 @@ class MediaWikiApiTest < Test::Unit::TestCase
       description text)')
     @detective = RevisionDetective.new(@db)
     
-    @info = [1,
-      'Amar Ben Belgacem',
-      'M',
-      '392473902',
-      '391225974',
-      'SD5',
-      '+226',
-      Time.parse('2010-02-10T22:17:39Z'),
-      "fixes, added persondata, typos fixed: august 24 \342\206\222 August 24 using [[Project:AWB|AWB]]"
-    ]
+    @info = [1, 'Amar Ben Belgacem', 'M', '392473902', '391225974', 'SD5', '+226', Time.parse('2010-02-10T22:17:39Z'), "fixes, added persondata, typos fixed: august 24 \342\206\222 August 24 using [[Project:AWB|AWB]]" ]
 
     @info2 = [2,
       'Vladimir Guerrero',
@@ -43,6 +34,8 @@ class MediaWikiApiTest < Test::Unit::TestCase
   end
   
   def test_find_revision_info
+    #the url should be:
+    #http://en.wikipedia.org/w/api.php?action=query&prop=revisions&revids=392473902&rvprop=ids|tags|flagged|timestamp|user|comment|size|flags|content
     revinfo = @detective.find_revision_info(@info)
     assert_equal([1287867544, 'SD5', "fixes, added persondata, typos fixed: august 24 \342\206\222 August 24 using [[Project:AWB|AWB]]", 6776, 1], [revinfo[0], revinfo[1], revinfo[2], revinfo[3], revinfo[5]])
   end
@@ -65,7 +58,7 @@ class MediaWikiApiTest < Test::Unit::TestCase
   def test_investigate
     @detective.setup_table()
     rownum = @detective.investigate(@info)
-    assert_equal(1.to_s, rownum)
+    assert_equal(1.to_s, rownum.to_s)
   end
   
   def test_setup_table
@@ -74,4 +67,5 @@ class MediaWikiApiTest < Test::Unit::TestCase
       @detective.setup_table()
     end
   end
+  
 end

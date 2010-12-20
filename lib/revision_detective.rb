@@ -55,14 +55,14 @@ SQL
     xml = get_xml({:format => :xml, :action => :query, :prop => :revisions, :revids => info[3], :rvprop => 'ids|tags|flagged|timestamp|user|comment|size|flags', :rvdiffto => :prev})
     res = parse_xml(xml)
 
-    rxml = rxml.first['pages'].first['page'].first['revisions'].first['rev'].first
+    rxml = res.first['pages'].first['page'].first['revisions'].first['rev'].first
     timestamp = find_timestamp(rxml)
     user = find_user(rxml)
     comment = find_comment(rxml)
     size = find_size(rxml)
     rev_content = find_content(rxml)
     flag = find_flag(rxml)
-    namespace = find_flag(res)
+    namespace = find_namespace(res)
 
     if (flag=="")
       is_minor = 1
@@ -113,31 +113,31 @@ SQL
   
   #rxml = ruby-ified xml
   def find_timestamp rxml
-    Time.parse(.first['timestamp'])
+    Time.parse(rxml['timestamp'])
   end
   
   def find_user rxml
-    rxml.first['pages'].first['page'].first['revisions'].first['rev'].first['user']
+    rxml['user']
   end
   
   def find_comment rxml
-    rxml.first['pages'].first['page'].first['revisions'].first['rev'].first['comment']
+    rxml['comment']
   end
   
   def find_size rxml
-    rxml.first['pages'].first['page'].first['revisions'].first['rev'].first['size']
+    rxml['size']
   end
   
   def find_content rxml
-    rxml.first['pages'].first['page'].first['revisions'].first['rev'].first['diff']
+    rxml['diff']
   end
   
   def find_flag rxml
-    rxml.first['pages'].first['page'].first['revisions'].first['rev'].first['minor']
+    rxml['minor']
   end
   
   def find_namespace rxml
-    rxml = res.first['pages'].first['ns']
+    rxml.first['pages'].first['page'].first['ns']
   end
   
 end
