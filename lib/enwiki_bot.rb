@@ -44,12 +44,14 @@ class EnWikiBot < Bot #TODO db.close
       ## so should the detective classes be static, so there's no chance of trying to access shared resources at the same time?
       #TODO build in some error handling/logging/queue to see if threads die/blow up and what we missed
       @detectives.each do |detective|
-        begin
-          Thread.new do
-            detective.investigate(info)
+        Thread.new do
+          begin
+              detective.investigate(info)
+          rescue Exception => e
+            throw Exception.new("EXCEPTION: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.first} with #{}")
+          rescue TypeError => e
+            throw Exception.new("ERROR: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.first}")
           end
-        rescue Exception, TypeError => e
-          throw Exception.new("ERROR: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.first}")
         end
       end
     end
