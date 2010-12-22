@@ -24,7 +24,9 @@ def _form_url(params)
   url = '?'
   params.each do |key, value|
     #val = URI.escape(unsafe_variable, Regexp.new("[^#{URI::PATTERN::UNRESERVED}]"))
-    url += key.to_s + '=' + value.to_s + '&'
+    safe_key = URI.escape(key.to_s, Regexp.new("[^#{URI::PATTERN::UNRESERVED}]"))
+    safe_value = URI.escape(value.to_s, Regexp.new("[^#{URI::PATTERN::UNRESERVED}]"))
+    url += safe_key + '=' + safe_value + '&'
   end
   url
 end

@@ -14,8 +14,15 @@ class MediaWikiApiTest < Test::Unit::TestCase
   
   def test__form_url2
     assert_equal(
-      '?format=xml&letitle=User:Tisane&list=logevents&action=query&letype=newusers&',
+      '?format=xml&letitle=User%3ATisane&list=logevents&action=query&letype=newusers&',
       _form_url({:format => :xml, :action => :query, :list => :logevents, :letitle => 'User:Tisane', :letype => :newusers })
+    )
+  end
+  
+  def test__form_url_encode
+    assert_equal(
+      '?format=xml&letitle=User%3ASir%20Sputnik&list=logevents&action=query&letype=newusers&',
+      _form_url({:format => :xml, :action => :query, :list => :logevents, :letitle => 'User:Sir Sputnik', :letype => :newusers })
     )
   end
   
