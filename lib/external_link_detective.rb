@@ -17,6 +17,7 @@ class ExternalLinkDetective < Detective
       revision_id integer,                              --foreign key to reference the original revision
       link string,
       source text,
+      created DATE DEFAULT (datetime('now','localtime')),
       FOREIGN KEY(revision_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)   --TODO this table name probably shouldn't be hard coded
 SQL
     end

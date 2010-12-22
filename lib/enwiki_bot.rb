@@ -16,7 +16,6 @@ class EnWikiBot < Bot #TODO db.close
     #server = 'irc.wikimedia.org' if server.nil?
     #channel = 'en.wikipedia' if channel.nil?
     #puts server + channel
-    #@log_file = File.new(IRC_LOG_FILE_PATH, "a")
     
     @table_name = server.gsub(/\./, '_') + '_' + channel.gsub(/\./, '_') #TODO this isn't really sanitized...use URI.parse
 
@@ -32,7 +31,7 @@ class EnWikiBot < Bot #TODO db.close
     end
     db_init
     
-    #Thread.abort_on_exception = true #set this so that if there's an exception on any of these threads, everything quits - good for initial debugging
+    Thread.abort_on_exception = true #set this so that if there's an exception on any of these threads, everything quits - good for initial debugging
     @detectives = [RevisionDetective.new(@db), AuthorDetective.new(@db), ExternalLinkDetective.new(@db), PageDetective.new(@db)]
     
     super(bot_name)
@@ -41,19 +40,15 @@ class EnWikiBot < Bot #TODO db.close
   def hear(message)
     if should_store?(message)
       info = store!(message)
-      #TODO call our methods in other threads
+      #call our methods in other threads: Process.fork or Thread.new ?
       ## so should the detective classes be static, so there's no chance of trying to access shared resources at the same time?
-      #
-      #TODO build in some error handling/logging to see if threads die/blow up and what we missed
+      #TODO build in some error handling/logging/queue to see if threads die/blow up and what we missed
       @detectives.each do |detective|
-        #detective = clazz
-        #Process.fork do
         begin
           Thread.new do
             detective.investigate(info)
           end
-        rescue => e
-        #  log("ERROR: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.first}")
+        rescue Exception, TypeError => e
           throw Exception.new("ERROR: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.first}")
         end
       end
@@ -135,11 +130,6 @@ class EnWikiBot < Bot #TODO db.close
   def db_init
     @db.type_translation = true
   end
-  
-  #def log message
-  #  @log_file.puts "#{@name} received @ #{Time.now.strftime('%Y%m%d %H:%M.%S')}:  #{message}"
-  #  @log_file.flush
-  #end
   
   #args should be: article_name, desc, rev_id, old_id, user, byte_diff, ts, description
   def db_write! args

@@ -20,6 +20,7 @@ class PageDetective < Detective
       page_last_revision_time timestamp(20),               --time of last revision on this page
       --popularity
       page_text text,
+      created DATE DEFAULT (datetime('now','localtime')),
       FOREIGN KEY(sample_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)   --TODO this table name probably shouldn't be hard coded
 SQL
     end

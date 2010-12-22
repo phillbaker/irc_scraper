@@ -40,9 +40,23 @@ class MediaWikiApiTest < Test::Unit::TestCase
     ]
   end
   
-  def test_find_account_history
+  def test_find_account_history_create_life_groups_block
     account_history = @detective.find_account_history(@info)
     assert_equal([1233505878, 32334381, "rollbacker", 0], [account_history[0], account_history[1], account_history[10], account_history[11]])
+  end
+  
+  def test_find_account_edit_bucket
+    #so all of these values are going to change (upward only in theory...we'll test against known values)
+    #all these values should change (as time goes on, they're all time dependent!)
+    account_history = @detective.find_account_history(@info)
+    assert_operator 10, :<=, account_history[2], "total edit count"
+    assert_operator 0, :<=, account_history[3], "second ago"
+    assert_operator 0, :<=, account_history[4], "minute"
+    assert_operator 0, :<=, account_history[5], "hour"
+    assert_operator 0, :<=, account_history[6], "day"
+    assert_operator 0, :<=, account_history[7], "week"
+    assert_operator 0, :<=, account_history[8], "month"
+    assert_operator 10, :<=, account_history[9], "year"
   end
   
   def test_investigate
@@ -61,7 +75,19 @@ class MediaWikiApiTest < Test::Unit::TestCase
   def test_block_info
       account_history =  @detective.find_account_history(@info2)
       assert_equal([1, 764932, "Picaroon", nil, "[[Wikipedia:Requests for checkuser/Case/W. Frank|sockpuppet of W. Frank]]"], [account_history[11], account_history[12], account_history[13], account_history[15], account_history[16]])
-      
   end
 
+  def test_non_existent_author_info
+    res = @detective.find_account_history([1,
+      'Saoula',
+      '',
+      '403706560',
+      '403544118',
+      '41.105.23.56',
+      '+33',
+      Time.parse('2010-02-10T22:17:39Z'),
+      ""
+    ])
+    assert_equal([nil, nil, 1, 0, 0, 0, 0, 0, 0, 0, "", 0, nil], res)
+  end
 end
