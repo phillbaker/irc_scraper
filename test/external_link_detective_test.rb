@@ -44,23 +44,53 @@ class MediaWikiApiTest < Test::Unit::TestCase
   def test_find_link_info
     linkinfo = @detective.find_link_info(@info2)
     assert_equal([10], [linkinfo.length])
-    arr = Array.new(linkinfo.length)
-    i = 0
+    arr = []
     linkinfo.each do |entry|
-      arr[i]= entry["link"]
-      i=i+1
+      arr << entry["link"]
     end
     		  
-    assert_equal(["http://baseballprospectus.com/article.php?articleid=9803",
- "http://blog.seattlepi.com/seattlesports/archives/169131.asp?from=blog_last3",
- "http://insider.espn.go.com/espn/blog/index?entryID=4558550&name=arangure_jorge_jr&addata=2009_insdr_mod_mlb_xxx_xxx&action=login&appRedirect=http:%2f%2finsider.espn.go.com%2fespn%2fblog%2findex%3fentryID=4558550&name=arangure_jorge_jr&addata=2009_insdr_mod_mlb_xxx_xxx",
- "http://latimesblogs.latimes.com/sports_blog/2009/08/angels-guerrero-slams-400th-career-home-run-.html",
- "http://minors.baseball-reference.com/players.cgi?pid=5922",
- "http://mlb.mlb.com/team/player.jsp?player_id=115223",
- "http://sports.espn.go.com/mlb/columns/story?columnist=stark_jayson&page=rumblings/080424",
- "http://sports.espn.go.com/mlb/news/story?id=1706614",
- "http://sports.espn.go.com/mlb/players/stats?playerId=3576",
- "http://sports.espn.go.com/mlb/recap?gameId=301022113"], arr)
+    assert_equal([
+      "http://baseballprospectus.com/article.php?articleid=9803",
+      "http://blog.seattlepi.com/seattlesports/archives/169131.asp?from=blog_last3",
+      "http://insider.espn.go.com/espn/blog/index?entryID=4558550&name=arangure_jorge_jr&addata=2009_insdr_mod_mlb_xxx_xxx&action=login&appRedirect=http:%2f%2finsider.espn.go.com%2fespn%2fblog%2findex%3fentryID=4558550&name=arangure_jorge_jr&addata=2009_insdr_mod_mlb_xxx_xxx",
+      "http://latimesblogs.latimes.com/sports_blog/2009/08/angels-guerrero-slams-400th-career-home-run-.html",
+      "http://minors.baseball-reference.com/players.cgi?pid=5922",
+      "http://mlb.mlb.com/team/player.jsp?player_id=115223",
+      "http://sports.espn.go.com/mlb/columns/story?columnist=stark_jayson&page=rumblings/080424",
+      "http://sports.espn.go.com/mlb/news/story?id=1706614",
+      "http://sports.espn.go.com/mlb/players/stats?playerId=3576",
+      "http://sports.espn.go.com/mlb/recap?gameId=301022113"
+    ], arr)
+  end
+
+  def test_find_link_info_none
+    linkinfo = @detective.find_link_info([
+      3,
+      'GTV',
+      'M',
+      '403719123',
+      '403677528',
+      'Paul Benjamin Austin',
+      '-24',
+      Time.parse('2010-02-10T22:17:39Z'),
+      "/* Former News Presenters */"
+    ])
+    assert_equal([], linkinfo)
+    
+    linkinfo = @detective.find_link_info([
+      5,
+      'User talk:Yourinface',
+      'N',
+      '403737191',
+      '415546201',
+      'Ohnoitsjamie',
+      '507',
+      Time.parse('2010-02-10T22:17:39Z'),
+      "test 2"
+    ])
+    assert_equal([], linkinfo)
+    linkinfo = @detective.find_link_info(@info)
+    assert_equal([], linkinfo)
   end
 
   def test_investigate

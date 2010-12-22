@@ -68,7 +68,7 @@ SQL
     xml= get_xml({:format => :xml, :action => :query, :prop => :extlinks, :revids => info[3]})
     res = parse_xml(xml)
     links_new = res.first['pages'].first['page'].first['extlinks']
-    if(links_new!=nil)
+    if(links_new != nil)
 	    links_new = links_new.first['el']
     else
 	    links_new = []
@@ -79,22 +79,41 @@ SQL
 
     xml= get_xml({:format => :xml, :action => :query, :prop => :extlinks, :revids => info[4]})
     res = parse_xml(xml)
-    links_old = res.first['pages'].first['page'].first['extlinks']
+    #can have bad revid's (ie first edits on a page)
+    links_old = []
+    if(res.first['badrevids'] == nil)
+      links_old = res.first['pages'].first['page'].first['extlinks']
 
-    if(links_old!=nil)
-	    links_old = links_old.first['el']
-    else
-	    links_old = []
+      if(links_old != nil)
+  	    links_old = links_old.first['el']
+      else
+  	    links_old = []
+      end
+      links_old.collect! do |link|
+        link['content']
+      end
     end
-    links_old.collect! do |link|
-      link['content']
-    end
+    
 
     linkdiff = links_new - links_old
     
     linkarray = []
     linkdiff.each do |link|
        source = Net::HTTP.get URI.parse(link)
+        # response = Net::HTTP.get_response(URI.parse(uri_str))
+        # case response
+        # when Net::HTTPSuccess     then response
+        # when Net::HTTPRedirection then fetch(response['location'], limit - 1)
+        # else
+        #   response.error!
+        # end
+        
+        #response = nil
+        #Net::HTTP.start('some.www.server', 80) {|http|
+        #  response = http.head('/index.html')
+        #}
+        #p response['content-type']
+        
        #TODO do a check for the size and type-content of it before we pull it
        #binary files we probably don't need to grab and things larger than a certain size we don't want to grab
        linkarray << {"link" => link, "source" => source}
