@@ -1,6 +1,7 @@
 require 'detective.rb'
 require 'mediawiki_api.rb'
 require 'time'
+require 'sqlite3'
 
 class PageDetective < Detective
   def table_name
@@ -14,12 +15,13 @@ class PageDetective < Detective
       <<-SQL
       id integer primary key autoincrement,
       sample_id integer,                                                      --foreign key to reference the original revision
-      --page_placement integer,
-      --byte number where revision starts
       page_last_revision_id integer,
       page_last_revision_time timestamp(20),               --time of last revision on this page
       --popularity
       page_text text,
+      --protection string,
+      length integer,
+      num_views integer,
       created DATE DEFAULT (datetime('now','localtime')),
       FOREIGN KEY(sample_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)   --TODO this table name probably shouldn't be hard coded
 SQL
@@ -39,7 +41,7 @@ SQL
   def investigate info
     page = find_page_history(info)
     db_write!(
-      ['sample_id', 'page_last_revision_id', 'page_last_revision_time', 'page_text'],
+      ['sample_id', 'page_last_revision_id', 'page_last_revision_time', 'page_text', 'num_views', 'length'],
       [info[0]] + page
     )
   end
@@ -49,16 +51,26 @@ SQL
     xml = get_xml({:format => :xml, :action => :query, :prop => :revisions, :revids => info[4], :rvprop => 'ids|timestamp|user|comment|content'})
     res = parse_xml(xml)
 
+    #http://en.wikipedia.org/w/api.php?action=query&prop=revisions&revids=230948209&rvprop=content
     xml = get_xml({:format => :xml, :action => :query, :prop => :revisions, :revids => info[3], :rvprop => 'content'})
     res2 = parse_xml(xml)
 
     source = res2.first['pages'].first['page'].first['revisions'].first['rev'].first['content'].to_s
   
-
-    [res.first['pages'].first['page'].first['revisions'].last['rev'].first['revid'], Time.parse(res.first['pages'].first['page'].first['revisions'].last['rev'].first['timestamp']).to_i, source]
-
-    #http://en.wikipedia.org/w/api.php?action=query&prop=revisions&revids=230948209&rvprop=content
+    #http://en.wikipedia.org/w/api.php?action=query&titles=Albert%20Einstein&prop=info&inprop=protection|talkid
+    xml = get_xml({:format => :xml, :action => :query, :revids => info[4], :prop => :info, :inprop => 'protection|talkid'})
+    res3 = parse_xml(xml)
     
-  end
-  
+    #Need to encode this into a string using sqlite method or serialize it somehow
+    #puts encode(res3.first['pages'].first['page'].first['protection'])
+    
+    [res.first['pages'].first['page'].first['revisions'].last['rev'].first['revid'], 
+      Time.parse(res.first['pages'].first['page'].first['revisions'].last['rev'].first['timestamp']).to_i, 
+      source, 
+      res3.first['pages'].first['page'].first['counter'].to_i, 
+      res3.first['pages'].first['page'].first['length'].to_i
+    ]
+
+    
+  end  
 end
