@@ -35,6 +35,20 @@ class MediaWikiApiTest < Test::Unit::TestCase
     assert_equal(["391225974",1287318134], [pageinfo[0], pageinfo[1]])
   end
 
+  def test_find_page_info_nils
+    #always need to test badrevid when using oldid...
+    pageinfo = @detective.find_page_history([2,
+      'Category talk:Anime and manga articles with a missing image caption',
+      '!N',
+      '403743470',
+      '415552604',
+      'TheFarix',
+      '+31',
+      Time.parse('2010-02-10T22:17:39Z'),
+      "[[WP:AES|←]]Created page with '{{WikiProject Anime and manga}}"])
+    assert_equal([nil, nil, "{{WikiProject Anime and manga}}", nil, nil], pageinfo)
+  end
+
   def test_investigate
     @detective.setup_table()
     rownum = @detective.investigate(@info)
