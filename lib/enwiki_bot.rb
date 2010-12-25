@@ -45,6 +45,8 @@ class EnWikiBot < Bot #TODO db.close
       #TODO build in some error handling/logging/queue to see if threads die/blow up and what we missed
       @detectives.each do |detective|
         Thread.new do
+          #mandatory wait period before investigating: 10s
+          sleep(10)
           begin
               detective.investigate(info)
           rescue Exception => e
