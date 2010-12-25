@@ -49,6 +49,20 @@ class MediaWikiApiTest < Test::Unit::TestCase
     assert_equal([nil, nil, "{{WikiProject Anime and manga}}", nil, nil], pageinfo)
   end
 
+  def test_find_page_info_sqlite
+    @detective.setup_table()
+    rownum = @detective.investigate([3,
+      'Category talk:1830 in Canada',
+      'N',
+      '404100591',
+      '415919731',
+      'Koavf',
+      '+2',
+      Time.parse('2010-02-10T22:17:39Z'),
+      "tag using [[Project:AWB|AWB]]"])
+    assert_equal(1.to_s, rownum.to_s)
+  end
+
   def test_investigate
     @detective.setup_table()
     rownum = @detective.investigate(@info)

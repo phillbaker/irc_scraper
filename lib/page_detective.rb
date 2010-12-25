@@ -50,8 +50,8 @@ SQL
     #http://en.wikipedia.org/w/api.php?action=query&prop=revisions&revids=342098230&rvprop=timestamp|user|comment|content
     xml = get_xml({:format => :xml, :action => :query, :prop => :revisions, :revids => info[4], :rvprop => 'ids|timestamp|user|comment|content'})
     res = parse_xml(xml)
-    rev_id = nil
-    time = nil
+    rev_id = '-' #this will be used if the page is newly created
+    time = ''
     if(res.first['badrevids'] == nil)
       rev_id = res.first['pages'].first['page'].first['revisions'].last['rev'].first['revid']
       time = Time.parse(res.first['pages'].first['page'].first['revisions'].last['rev'].first['timestamp']).to_i
@@ -65,8 +65,8 @@ SQL
     #http://en.wikipedia.org/w/api.php?action=query&titles=Albert%20Einstein&prop=info&inprop=protection|talkid
     xml = get_xml({:format => :xml, :action => :query, :revids => info[4], :prop => :info, :inprop => 'protection|talkid'})
     res3 = parse_xml(xml)
-    num_views = nil
-    length = nil
+    num_views = 0
+    length = 0
     if(res.first['badrevids'] == nil)
       num_views = res3.first['pages'].first['page'].first['counter'].to_i
       length = res3.first['pages'].first['page'].first['length'].to_i
