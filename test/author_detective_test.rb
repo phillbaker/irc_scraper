@@ -89,6 +89,6 @@ class AuthorDetectiveTest < Test::Unit::TestCase
       Time.parse('2010-02-10T22:17:39Z'),
       ""
     ])
-    assert_equal(['-', 0, 1, 0, 0, 0, 0, 0, 0, 0, "", 0, nil], res)
+    assert_equal(['-', 0, 1, 0, 0, 0, 0, 0, 0, 0, '', 0, ''], res)
   end
 end

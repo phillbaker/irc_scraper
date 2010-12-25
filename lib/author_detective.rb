@@ -195,7 +195,7 @@ SQL
     xml4 = get_xml({:format => :xml, :action => :query, :prop => :revisions, :titles => usertalkpg_title, :rvprop => 'content'})
     res4 = parse_xml(xml4)
     
-    source = nil
+    source = ''
     if res4.first['pages'].first['page'].first['revisions'] != nil
       source = res4.first['pages'].first['page'].first['revisions'].first['rev'].first['content']
     end
