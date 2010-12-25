@@ -128,9 +128,9 @@ SQL
     
     rxml = res.first['users'].first['user'].first
     #if it's an IP address, won't have anything
-    create = nil
-    life = nil
-    editcount = nil
+    create = '-'
+    life = 0
+    editcount = 0
     if(rxml['registration'] != nil)
       create = Time.parse(rxml['registration'])
       life = info[7] - create
@@ -138,7 +138,7 @@ SQL
       life = life.to_i
     end
     
-    editcount = nil
+    editcount = 0
     if(rxml['editcount'] != nil)
       #for ip address users, there is no editcount, take that from below instead
       editcount = rxml['editcount']
