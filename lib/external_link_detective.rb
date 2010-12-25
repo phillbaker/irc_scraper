@@ -99,26 +99,30 @@ SQL
     
     linkarray = []
     linkdiff.each do |link|
-       source = Net::HTTP.get URI.parse(link)
-        # response = Net::HTTP.get_response(URI.parse(uri_str))
-        # case response
-        # when Net::HTTPSuccess     then response
-        # when Net::HTTPRedirection then fetch(response['location'], limit - 1)
-        # else
-        #   response.error!
-        # end
-        
-        #response = nil
-        #Net::HTTP.start('some.www.server', 80) {|http|
-        #  response = http.head('/index.html')
-        #}
-        #p response['content-type']
-        
-       #TODO do a check for the size and type-content of it before we pull it
-       #binary files we probably don't need to grab and things larger than a certain size we don't want to grab
-       linkarray << {"link" => link, "source" => source}
+      source = find_source(link)
+      linkarray << {"link" => link, "source" => source}
     end
     linkarray
+  end
+  
+  def find_source(url)
+    source = Net::HTTP.get(URI.parse(url))
+    # response = Net::HTTP.get_response(URI.parse(uri_str))
+    # case response
+    # when Net::HTTPSuccess     then response
+    # when Net::HTTPRedirection then fetch(response['location'], limit - 1)
+    # else
+    #   response.error!
+    # end
+    
+    #response = nil
+    #Net::HTTP.start('some.www.server', 80) {|http|
+    #  response = http.head('/index.html')
+    #}
+    #p response['content-type']
+      
+    #TODO do a check for the size and type-content of it before we pull it
+    #binary files we probably don't need to grab and things larger than a certain size we don't want to grab
   end
   
 end
