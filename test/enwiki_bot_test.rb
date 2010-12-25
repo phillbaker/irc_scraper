@@ -36,7 +36,7 @@ class EnWikiBotTest < Test::Unit::TestCase
     @bot.db.table_info('server_channel') do |row|
       schema += "\n" + row['name']
     end
-    assert_equal("\nid\narticle_name\ndesc\nrevision_id\nold_id\nuser\nbyte_diff\nts\ndescription", schema)
+    assert_equal("\nid\narticle_name\ndesc\nrevision_id\nold_id\nuser\nbyte_diff\nts\ndescription\ncreated", schema)
   end
   
   def test_db_open

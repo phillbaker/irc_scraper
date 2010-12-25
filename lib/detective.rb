@@ -37,7 +37,7 @@ class Detective
       #sqlite specific...
       db.get_first_value("SELECT name FROM sqlite_master WHERE name='" + name + "'")
     end
-  end
+  end #end class methods
   
   attr_accessor :db
   

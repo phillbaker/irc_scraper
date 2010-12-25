@@ -24,15 +24,19 @@ class EnWikiBot < Bot #TODO db.close
       db_create_schema!(@table_name)
     elsif db_exists?(bot_name)
       #assume table has already been created, we're continuing from previous use
-      db_open bot_name
+      @db = db_open(bot_name)
     else
       @db = db_create!(bot_name)
       db_create_schema!(@table_name)
     end
-    db_init
+    db_init()
     
     Thread.abort_on_exception = true #set this so that if there's an exception on any of these threads, everything quits - good for initial debugging
-    @detectives = [RevisionDetective.new(@db), AuthorDetective.new(@db), ExternalLinkDetective.new(@db), PageDetective.new(@db)]
+    #@detectives = [RevisionDetective.new(@db), AuthorDetective.new(@db), ExternalLinkDetective.new(@db), PageDetective.new(@db)]
+    @detectives = [RevisionDetective, AuthorDetective, ExternalLinkDetective, PageDetective]
+    @detectives.each do |clazz|
+      clazz.setup_table(@db)
+    end
     
     super(bot_name)
   end
@@ -40,15 +44,17 @@ class EnWikiBot < Bot #TODO db.close
   def hear(message)
     if should_store?(message)
       info = store!(message)
-      #call our methods in other threads: Process.fork or Thread.new ?
+      #call our methods in other threads: Process.fork (=> actual system independent processes) or Thread.new = in ruby vm psuedo threads?
       ## so should the detective classes be static, so there's no chance of trying to access shared resources at the same time?
       #TODO build in some error handling/logging/queue to see if threads die/blow up and what we missed
-      @detectives.each do |detective|
+      @detectives.each do |clazz|
         Thread.new do
-          #mandatory wait period before investigating: 10s
+          db = db_open(@name)
+          detective = clazz.new(db)
+          #mandatory wait period before investigating: 10s?
           sleep(10)
           begin
-              detective.investigate(info)
+            detective.investigate(info)
           rescue Exception => e
             throw Exception.new("EXCEPTION: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.find{|i| i =~ /_detective/}} with #{message}") #.find{|i| i =~ /^(.|\/[^SL])/}
           rescue TypeError => e
@@ -114,7 +120,7 @@ class EnWikiBot < Bot #TODO db.close
   end
   
   def db_create! db_name
-    @db = SQLite3::Database.new("#{db_name}.#{DB_SUFFIX}")
+    SQLite3::Database.new("#{db_name}.#{DB_SUFFIX}")
   end
   
   def db_create_schema! table_name
@@ -128,11 +134,12 @@ class EnWikiBot < Bot #TODO db.close
   end
   
   def db_open db_name
-    @db = SQLite3::Database.open("#{db_name}.#{DB_SUFFIX}")
+    SQLite3::Database.open("#{db_name}.#{DB_SUFFIX}")
   end
   
   def db_init
     @db.type_translation = true
+    @db.busy_timeout(1000) #in ms, 1000 = 1s
   end
   
   #args should be: article_name, desc, rev_id, old_id, user, byte_diff, ts, description
