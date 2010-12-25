@@ -4,7 +4,7 @@ require 'page_detective.rb'
 
 require 'time'
 
-class MediaWikiApiTest < Test::Unit::TestCase
+class PageDetectiveTest < Test::Unit::TestCase
   def setup
     @db = SQLite3::Database.new(":memory:")
     @db.execute('CREATE TABLE irc_wikimedia_org_en_wikipedia (
@@ -17,7 +17,8 @@ class MediaWikiApiTest < Test::Unit::TestCase
       byte_diff integer,
       ts timestamp(20),
       description text)')
-    @detective = PageDetective.new(@db)
+    @clazz = PageDetective
+    @detective = @clazz.new(@db)
     @info = [1,
       'Amar Ben Belgacem',
       'M',
@@ -32,7 +33,7 @@ class MediaWikiApiTest < Test::Unit::TestCase
   
   def test_find_page_info
     pageinfo = @detective.find_page_history(@info)
-    assert_equal(["391225974",1287318134], [pageinfo[0], pageinfo[1]])
+    assert_equal(["391225974", "1287318134"], [pageinfo[0], pageinfo[1]])
   end
 
   def test_find_page_info_nils
@@ -46,11 +47,11 @@ class MediaWikiApiTest < Test::Unit::TestCase
       '+31',
       Time.parse('2010-02-10T22:17:39Z'),
       "[[WP:AES|←]]Created page with '{{WikiProject Anime and manga}}"])
-    assert_equal([nil, nil, "{{WikiProject Anime and manga}}", nil, nil], pageinfo)
+    assert_equal(["-", "", "{{WikiProject Anime and manga}}", "0", "0"], pageinfo)
   end
 
   def test_find_page_info_sqlite
-    @detective.setup_table()
+    @clazz.setup_table(@db)
     rownum = @detective.investigate([3,
       'Category talk:1830 in Canada',
       'N',
@@ -64,7 +65,7 @@ class MediaWikiApiTest < Test::Unit::TestCase
   end
 
   def test_investigate
-    @detective.setup_table()
+    @clazz.setup_table(@db)
     rownum = @detective.investigate(@info)
     assert_equal(1.to_s, rownum.to_s)
   end
@@ -72,7 +73,7 @@ class MediaWikiApiTest < Test::Unit::TestCase
   def test_setup_table
     #to test the sql of the table definition
     assert_nothing_raised do
-      @detective.setup_table()
+      @clazz.setup_table(@db)
     end
   end
 

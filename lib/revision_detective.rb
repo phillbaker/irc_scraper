@@ -2,13 +2,13 @@ require 'detective.rb'
 require 'mediawiki_api.rb'
 
 class RevisionDetective < Detective
-  def table_name
+  def self.table_name
     'revision'
   end
 
   #return a proc that defines the columns used by this detective
   #if using this as an example, you probably should copy the first two columns (the id and foreign key)
-  def columns
+  def self.columns
     Proc.new do
       <<-SQL
       id integer primary key autoincrement,
@@ -86,15 +86,18 @@ SQL
       link['content']
     end
 
-    xml2= get_xml({:format => :xml, :action => :query, :prop => :extlinks, :revids => info[4]})
+    xml2 = get_xml({:format => :xml, :action => :query, :prop => :extlinks, :revids => info[4]})
     res2 = parse_xml(xml2)
-    links_old = res2.first['pages'].first['page'].first['extlinks']
-
-    if(links_old != nil)
-      links_old = links_old.first['el']
-    else
-      links_old = []
+    links_old = []
+    if(res2.first['badrevids'] == nil)
+      links_old = res2.first['pages'].first['page'].first['extlinks']
+      if(links_old != nil)
+        links_old = links_old.first['el']
+      else
+        links_old = []
+      end
     end
+    
     links_old.collect! do |link|
       link['content']
     end

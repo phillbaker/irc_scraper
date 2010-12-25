@@ -4,7 +4,7 @@ require 'revision_detective.rb'
 
 require 'time'
 
-class MediaWikiApiTest < Test::Unit::TestCase
+class RevisionDetectiveTest < Test::Unit::TestCase
   def setup
     @db = SQLite3::Database.new(":memory:")
     @db.execute('CREATE TABLE irc_wikimedia_org_en_wikipedia (
@@ -17,7 +17,8 @@ class MediaWikiApiTest < Test::Unit::TestCase
       byte_diff integer,
       ts timestamp(20),
       description text)')
-    @detective = RevisionDetective.new(@db)
+    @clazz = RevisionDetective
+    @detective = @clazz.new(@db)
     
     @info = [1, 'Amar Ben Belgacem', 'M', '392473902', '391225974', 'SD5', '+226', Time.parse('2010-02-10T22:17:39Z'), "fixes, added persondata, typos fixed: august 24 \342\206\222 August 24 using [[Project:AWB|AWB]]" ]
 
@@ -55,8 +56,24 @@ class MediaWikiApiTest < Test::Unit::TestCase
     assert_equal([0], [revinfo[6]])
   end
 
+  def test_link_info_new_page
+    assert_nothing_raised do
+      revinfo = @detective.find_revision_info([
+        3,
+        'Category talk:Presidents of the Chamber of Deputies of Chile',
+        'N',
+        '404102956',
+        '415922166',
+        'Koavf',
+        '+21',
+        Time.parse('2010-02-10T22:17:39Z'),
+        "tag using [[Project:AWB|AWB]]"
+      ])
+    end
+  end
+
   def test_investigate
-    @detective.setup_table()
+    @clazz.setup_table(@db)
     rownum = @detective.investigate(@info)
     assert_equal(1.to_s, rownum.to_s)
   end
@@ -64,7 +81,7 @@ class MediaWikiApiTest < Test::Unit::TestCase
   def test_setup_table
     #to test the sql of the table definition
     assert_nothing_raised do
-      @detective.setup_table()
+      @clazz.setup_table(@db)
     end
   end
   

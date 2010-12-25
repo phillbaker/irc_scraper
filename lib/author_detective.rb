@@ -4,13 +4,13 @@ require 'mediawiki_api.rb'
 require 'time'
 
 class AuthorDetective < Detective
-  def table_name
+  def self.table_name
     'author'
   end
 
   #return a proc that defines the columns used by this detective
   #if using this as an example, you probably should copy the first two columns (the id and foreign key)
-  def columns
+  def self.columns
     Proc.new do
       <<-SQL
       id integer primary key autoincrement,

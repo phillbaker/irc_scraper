@@ -4,7 +4,7 @@ require 'external_link_detective.rb'
 
 require 'time'
 
-class MediaWikiApiTest < Test::Unit::TestCase
+class ExternalLinkDetectiveTest < Test::Unit::TestCase
   def setup
     @db = SQLite3::Database.new(":memory:")
     @db.execute('CREATE TABLE irc_wikimedia_org_en_wikipedia (
@@ -17,7 +17,8 @@ class MediaWikiApiTest < Test::Unit::TestCase
       byte_diff integer,
       ts timestamp(20),
       description text)')
-    @detective = ExternalLinkDetective.new(@db)
+    @clazz = ExternalLinkDetective
+    @detective = @clazz.new(@db)
     @info = [1,
       'Amar Ben Belgacem',
       'M',
@@ -94,7 +95,7 @@ class MediaWikiApiTest < Test::Unit::TestCase
   end
 
   def test_investigate
-    @detective.setup_table()
+    @clazz.setup_table(@db)
     rownum = @detective.investigate(@info2)
     assert_equal(10.to_s, rownum.to_s)
   end
@@ -102,7 +103,7 @@ class MediaWikiApiTest < Test::Unit::TestCase
   def test_setup_table
     #to test the sql of the table definition
     assert_nothing_raised do
-      @detective.setup_table()
+      @clazz.setup_table(@db)
     end
   end
 
