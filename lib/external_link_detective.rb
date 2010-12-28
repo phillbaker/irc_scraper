@@ -65,7 +65,7 @@ SQL
 
     #this is what we're going to do: get all external links for prev_id and all external links for curr_id and diff them, any added => new extrnal links to find
     #http://en.wikipedia.org/w/api.php?action=query&prop=extlinks&revids=800129
-    xml= get_xml({:format => :xml, :action => :query, :prop => :extlinks, :revids => info[3]})
+    xml = get_xml({:format => :xml, :action => :query, :prop => :extlinks, :revids => info[3]})
     res = parse_xml(xml)
     links_new = res.first['pages'].first['page'].first['extlinks']
     if(links_new != nil)
@@ -106,7 +106,14 @@ SQL
   end
   
   def find_source(url)
-    source = Net::HTTP.get(URI.parse(url))
+    #source = Net::HTTP.get(URI.parse(url))
+    uri = URI.parse(url)
+    
+    http = Net::HTTP.new(uri.host)
+    resp = http.request_get(uri.path, 'User-Agent' => 'WikipediaAntiSpamBot/0.1 (+hincapie.cis.upenn.edu)')
+
+    raise "POST FAILED:" + resp.inspect unless resp.is_a? Net::HTTPOK or resp.is_a? Net::HTTPFound
+    resp.body
     # response = Net::HTTP.get_response(URI.parse(uri_str))
     # case response
     # when Net::HTTPSuccess     then response

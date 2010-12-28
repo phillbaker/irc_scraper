@@ -56,9 +56,11 @@ class EnWikiBot < Bot #TODO db.close
           begin
             detective.investigate(info)
           rescue Exception => e
-            throw Exception.new("EXCEPTION: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.find{|i| i =~ /_detective/}} with #{message}") #.find{|i| i =~ /^(.|\/[^SL])/}
+            exp = Exception.new("EXCEPTION: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.find{|i| i =~ /_detective/} } with #{message}") #.find{|i| i =~ /^(.|\/[^SL])/}  
+            exp.set_backtrace(e.backtrace.select{|i| i =~ /_detective/ })
+            raise exp
           rescue TypeError => e
-            throw Exception.new("ERROR: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.first}")
+            raise Exception.new("ERROR: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.first}")
           end
         end
       end
