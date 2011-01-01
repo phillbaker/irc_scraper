@@ -20,6 +20,9 @@ class EnWikiBot < Bot #TODO db.close
     #puts server + channel
     
     @pool = ThreadPool.new(10) # up to 10 threads
+    #http://snippets.dzone.com/posts/show/3276 for info on the threadpool
+    #need to call pool.join() before closing the db
+
     @table_name = server.gsub(/\./, '_') + '_' + channel.gsub(/\./, '_') #TODO this isn't really sanitized...use URI.parse
 
     if db
