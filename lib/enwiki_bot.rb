@@ -8,6 +8,8 @@ require 'external_link_detective.rb'
 require 'rubygems'
 require 'sqlite3'
 
+require 'threadpool'
+
 class EnWikiBot < Bot #TODO db.close
   
   attr_accessor :db
@@ -17,6 +19,7 @@ class EnWikiBot < Bot #TODO db.close
     #channel = 'en.wikipedia' if channel.nil?
     #puts server + channel
     
+    @pool = ThreadPool.new(10) # up to 10 threads
     @table_name = server.gsub(/\./, '_') + '_' + channel.gsub(/\./, '_') #TODO this isn't really sanitized...use URI.parse
 
     if db
@@ -47,24 +50,27 @@ class EnWikiBot < Bot #TODO db.close
       #call our methods in other threads: Process.fork (=> actual system independent processes) or Thread.new = in ruby vm psuedo threads?
       ## so should the detective classes be static, so there's no chance of trying to access shared resources at the same time?
       #TODO build in some error handling/logging/queue to see if threads die/blow up and what we missed
+
       @detectives.each do |clazz|
-        Thread.new do
-          db = db_open(@name)
-          detective = clazz.new(db)
-          #mandatory wait period before investigating: 10s?
-          sleep(10)
-          begin
-            detective.investigate(info)
-          rescue Exception => e
-            throw Exception.new("EXCEPTION: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.find{|i| i =~ /_detective/}} with #{message}") #.find{|i| i =~ /^(.|\/[^SL])/}
-          rescue TypeError => e
-            throw Exception.new("ERROR: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.first}")
-          end
-        end
+        @pool.process{start_detective info,clazz}
       end
     end
   end
   
+  def start_detective(info, clazz)
+      db = db_open(@name)
+      detective = clazz.new(db)
+      #mandatory wait period before investigating: 10s?
+      sleep(10)
+      begin
+         detective.investigate(info)
+         rescue Exception => e
+      	    throw Exception.new("EXCEPTION: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.find{|i| i =~ /_detective/}} with #{message}") #.find{|i| i =~ /^(.|\/[^SL])/}
+         rescue TypeError => e
+            throw Exception.new("ERROR: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.first}")
+      end
+  end
+
   def should_store? message
     #keep messages that match our format...eventually this will be limited to certain messages, should we spin out a thread per message?
     message =~ /\00314\[\[\00307(.*)\00314\]\]\0034\ (.*)\00310\ \00302(.*)\003\ \0035\*\003\ \00303(.*)\003\ \0035\*\003\ \((.*)\)\ \00310(.*)\003/ #TODO this is silly, we should only scan this once...below, probably
