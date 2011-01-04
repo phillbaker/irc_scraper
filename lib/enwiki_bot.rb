@@ -55,12 +55,12 @@ class EnWikiBot < Bot #TODO db.close
       #TODO build in some error handling/logging/queue to see if threads die/blow up and what we missed
 
       @detectives.each do |clazz|
-        @pool.process{start_detective info,clazz}
+        @pool.process{start_detective info,clazz,message}
       end
     end
   end
   
-  def start_detective(info, clazz)
+  def start_detective(info, clazz, message)
       db = db_open(@name)
       detective = clazz.new(db)
       #mandatory wait period before investigating: 10s?
