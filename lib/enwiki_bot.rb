@@ -9,6 +9,7 @@ require 'rubygems'
 require 'sqlite3'
 
 require 'threadpool'
+require 'logger'
 
 class EnWikiBot < Bot #TODO db.close
   
@@ -24,7 +25,7 @@ class EnWikiBot < Bot #TODO db.close
     #need to call pool.join() before closing the db
 
     @table_name = server.gsub(/\./, '_') + '_' + channel.gsub(/\./, '_') #TODO this isn't really sanitized...use URI.parse
-
+    log = Logger.new('errors.log') 
     if db
       @db = db
       db_create_schema!(@table_name)
@@ -37,7 +38,7 @@ class EnWikiBot < Bot #TODO db.close
     end
     db_init()
     
-    Thread.abort_on_exception = true #set this so that if there's an exception on any of these threads, everything quits - good for initial debugging
+    Thread.abort_on_exception = false #set this so that if there's an exception on any of these threads, everything quits - good for initial debugging
     #@detectives = [RevisionDetective.new(@db), AuthorDetective.new(@db), ExternalLinkDetective.new(@db), PageDetective.new(@db)]
     @detectives = [RevisionDetective, AuthorDetective, ExternalLinkDetective, PageDetective]
     @detectives.each do |clazz|
@@ -68,9 +69,10 @@ class EnWikiBot < Bot #TODO db.close
       begin
          detective.investigate(info)
          rescue Exception => e
-      	    throw Exception.new("EXCEPTION: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.find{|i| i =~ /_detective/}} with #{message}") #.find{|i| i =~ /^(.|\/[^SL])/}
+      	    log.error "EXCEPTION: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.find{|i| i =~ /_detective/}} with #{message}"
          rescue TypeError => e
-            throw Exception.new("ERROR: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.first}")
+            log.error "ERROR: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.first}"
+		
       end
   end
 
