@@ -197,8 +197,11 @@ SQL
     
     source = ''
     if res4.first['pages'].first['page'].first['revisions'] != nil
-      source = res4.first['pages'].first['page'].first['revisions'].first['rev'].first['content']
+       if res4.first['pages'].first['page'].first['revisions'].first['rev'] !=nil
+       	  source = res4.first['pages'].first['page'].first['revisions'].first['rev'].first['content']
+       end
     end
+
 
     #Need to get info on rights
     

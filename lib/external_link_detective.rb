@@ -99,6 +99,7 @@ SQL
     
     linkarray = []
     linkdiff.each do |link|
+      puts 'found a link!'
       source = find_source(link)
       linkarray << {"link" => link, "source" => source}
     end
