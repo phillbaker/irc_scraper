@@ -45,6 +45,10 @@ puts "<html><head><title>Spam Detection on Wikipedia stats page</title></head><b
 
 #TODO look at the counts for each table, and other stats...
 #look at namespace 0 revisions specifically (and in templates? (namespace 10?))
+#look at the number of nil entries in specific tables, that's stuff we're not getting
+#what percentage of ?
+#percentage of edits to different namespaces?
+#look at rates of edits in different namespaces, plot in real time?
 #TODO look at counts of specific items: good link additions, bad link additions
 
 

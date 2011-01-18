@@ -31,7 +31,7 @@ class EnWikiBot < Bot #TODO db.close
     end
     db_init()
     
-    Thread.abort_on_exception = true #set this so that if there's an exception on any of these threads, everything quits - good for initial debugging
+    #Thread.abort_on_exception = true #set this so that if there's an exception on any of these threads, everything quits - good for initial debugging
     #@detectives = [RevisionDetective.new(@db), AuthorDetective.new(@db), ExternalLinkDetective.new(@db), PageDetective.new(@db)]
     @detectives = [RevisionDetective, AuthorDetective, ExternalLinkDetective, PageDetective]
     @detectives.each do |clazz|

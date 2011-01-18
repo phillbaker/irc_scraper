@@ -22,11 +22,11 @@ class IRCClient
     send "NICK #{@bot.name}"
     send "USER #{@bot.name.downcase} 0 * #{@bot.name}"
     #wait until we get the go-ahead messages
-    while not @socket.closed?
-      message = @socket.gets
-      log message if message != nil
-      break if message =~ /:End of \/MOTD command./
-    end
+    #while not @socket.closed?
+    #  message = @socket.gets
+    #  log message if message != nil
+    #  break if message =~ /:End of \/MOTD command./
+    #end
     
     send "JOIN #{@channel}"
     
@@ -35,6 +35,7 @@ class IRCClient
         message = @socket.readline
         #log message
         if message =~ /^PING :(.*)$/
+          log message
           send "PONG #{$1}"
         elsif message =~ /^ERROR :Bad password/
           close
@@ -52,8 +53,8 @@ class IRCClient
         end
       end
       
-    end
-  end
+    end#end listening thread
+  end #end initialize
   
   def log message
     @log_file.puts "#{@bot.name} received @ #{Time.now.strftime('%Y%m%d %H:%M.%S')}:  #{message}"

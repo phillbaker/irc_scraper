@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # == Synopsis
 #
-# start.rb: Starts up a JoCoBot and connects it to a specified IRC server and channel
+# start.rb: Starts up an EnWikiBot and connects it to a specified IRC server and channel
 #
 # == Usage
 #
