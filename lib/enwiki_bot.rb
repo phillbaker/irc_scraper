@@ -8,7 +8,7 @@ require 'external_link_detective.rb'
 require 'rubygems'
 require 'sqlite3'
 
-require 'threadpool'
+require 'ThreadPool.rb'
 require 'logger'
 
 class EnWikiBot < Bot #TODO db.close
@@ -20,12 +20,14 @@ class EnWikiBot < Bot #TODO db.close
     #channel = 'en.wikipedia' if channel.nil?
     #puts server + channel
     
-    @pool = ThreadPool.new(20) # up to 10 threads
+    #@pool = ThreadPool.new(20) # up to 10 threads
     #http://snippets.dzone.com/posts/show/3276 for info on the threadpool
+    @mypool = ThreadPooling::ThreadPool.new(10) # up to 10 threads
+
     #need to call pool.join() before closing the db
 
     @table_name = server.gsub(/\./, '_') + '_' + channel.gsub(/\./, '_') #TODO this isn't really sanitized...use URI.parse
-    log = Logger.new('errors.log') 
+    @log = Logger.new('errors.log') 
     if db
       @db = db
       db_create_schema!(@table_name)
@@ -56,7 +58,9 @@ class EnWikiBot < Bot #TODO db.close
       #TODO build in some error handling/logging/queue to see if threads die/blow up and what we missed
 
       @detectives.each do |clazz|
-        @pool.process{ start_detective(info,clazz,message) }
+        @mypool.dispatch do
+	        start_detective(info,clazz,message)
+        end
       end
     end
   end
@@ -69,11 +73,12 @@ class EnWikiBot < Bot #TODO db.close
       begin
         detective.investigate(info)
       rescue Exception => e
-        exp = Exception.new("EXCEPTION: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.find{|i| i =~ /_detective/} } with #{message}") #.find{|i| i =~ /^(.|\/[^SL])/}  
-        exp.set_backtrace(e.backtrace.select{|i| i =~ /_detective/ })
-        raise exp
-      rescue TypeError => e
-        raise Exception.new("ERROR: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.first}")
+        str = "EXCEPTION: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.find{|i| i =~ /_detective/} } with #{message}"
+        @log.error str
+        Thread.current.kill
+        #exp = Exception.new(str)
+        #exp.set_backtrace(e.backtrace.select{|i| i =~ /_detective/ })
+        #raise exp
       end
   end
 
