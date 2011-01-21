@@ -59,6 +59,7 @@ class EnWikiBot < Bot #TODO db.close
 
       @detectives.each do |clazz|
         @mypool.dispatch do
+          #@log.error("starting #{@mypool.thread_count}")
 	        start_detective(info,clazz,message)
         end
       end
@@ -75,10 +76,10 @@ class EnWikiBot < Bot #TODO db.close
       rescue Exception => e
         str = "EXCEPTION: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.find{|i| i =~ /_detective/} } with #{message}"
         @log.error str
-        Thread.current.kill
-        #exp = Exception.new(str)
-        #exp.set_backtrace(e.backtrace.select{|i| i =~ /_detective/ })
-        #raise exp
+        #Thread.current.kill
+        exp = Exception.new(str)
+        exp.set_backtrace(e.backtrace.select{|i| i =~ /_detective/ })
+        raise exp
       end
   end
 

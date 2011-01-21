@@ -15,6 +15,7 @@ class ExternalLinkDetective < Detective
       <<-SQL
       id integer primary key autoincrement,
       revision_id integer,                              --foreign key to reference the original revision
+      http_response boolean,
       link string,
       source text,
       created DATE DEFAULT (datetime('now','localtime')),
@@ -99,9 +100,9 @@ SQL
     
     linkarray = []
     linkdiff.each do |link|
-      puts 'found a link!'
-      source = find_source(link)
-      linkarray << {"link" => link, "source" => source}
+      #puts 'found a link!'
+      source,success = find_source(link)
+      linkarray << {"link" => link, "source" => source, "http_response" => success}
     end
     linkarray
   end
@@ -111,10 +112,21 @@ SQL
     uri = URI.parse(url)
     
     http = Net::HTTP.new(uri.host)
-    resp = http.request_get(uri.path, 'User-Agent' => 'WikipediaAntiSpamBot/0.1 (+hincapie.cis.upenn.edu)')
-
-    raise "POST FAILED:" + resp.inspect unless resp.is_a? Net::HTTPOK or resp.is_a? Net::HTTPFound
-    resp.body
+    resp = nil
+    begin
+      resp = http.request_get(uri.path, 'User-Agent' => 'WikipediaAntiSpamBot/0.1 (+hincapie.cis.upenn.edu)')
+    rescue SocketError => e
+      resp = e
+    end
+    
+    ret = []
+    if(resp.is_a? Net::HTTPOK or resp.is_a? Net::HTTPFound)
+      ret << resp.body
+      ret << true
+    else
+      ret << resp.class.to_s
+      ret << false
+    end
     # response = Net::HTTP.get_response(URI.parse(uri_str))
     # case response
     # when Net::HTTPSuccess     then response

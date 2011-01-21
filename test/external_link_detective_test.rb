@@ -110,7 +110,13 @@ class ExternalLinkDetectiveTest < Test::Unit::TestCase
   def test_find_source
     source = @detective.find_source('http://example.com/')
     known_source = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\r\n<HTML>\r\n<HEAD>\r\n  <META http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n  <TITLE>Example Web Page</TITLE>\r\n</HEAD> \r\n<body>  \r\n<p>You have reached this web page by typing &quot;example.com&quot;,\r\n&quot;example.net&quot;,&quot;example.org&quot\r\n  or &quot;example.edu&quot; into your web browser.</p>\r\n<p>These domain names are reserved for use in documentation and are not available \r\n  for registration. See <a href=\"http://www.rfc-editor.org/rfc/rfc2606.txt\">RFC \r\n  2606</a>, Section 3.</p>\r\n</BODY>\r\n</HTML>\r\n\r\n"
-    assert_equal(known_source, source)
+    assert_equal([known_source, true], source)
+    
+    source = @detective.find_source('http://example.com/asdfasdf')
+    assert_equal(['Net::HTTPNotFound', false], source)
+    
+    source = @detective.find_source('http://pqualsdkjfladf.com/asdfasdf')
+    assert_equal(['SocketError', false], source)
   end
 
 end
