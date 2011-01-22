@@ -17,7 +17,7 @@ class ExternalLinkDetective < Detective
       revision_id integer,                              --foreign key to reference the original revision
       link string,
       source text,
-      FOREIGN KEY(revision_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)   --TODO this table name probably shouldn't be hard coded
+      FOREIGN KEY(revision_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)   --TODO this table name probably shouldnt be hard coded
 SQL
     end
   end
@@ -93,12 +93,20 @@ SQL
     
     linkarray = []
     linkdiff.each do |link|
-       source = Net::HTTP.get URI.parse(link)
+       response = Net::HTTP.get_response URI.parse(link)
+       if(response.content_type != "text/html")
+         source = ""
+       else
+         source = Net::HTTP.get URI.parse(link)
+       end
        #TODO do a check for the size and type-content of it before we pull it
        #binary files we probably don't need to grab and things larger than a certain size we don't want to grab
+       if(source.length > 10000)
+         source = source[0,10000]
+       end
        linkarray << {"link" => link, "source" => source}
     end
     linkarray
-  end
-  
+  end  
+
 end
