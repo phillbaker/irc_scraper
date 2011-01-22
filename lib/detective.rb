@@ -62,6 +62,8 @@ class Detective
       if o.is_a?(String)
         o = SQLite3::Database.quote(o) #need to escape single quotes, not c-style for sqlite, but two single quotes
         ret = "'#{o}'"
+      elsif o == nil
+        ret = 'NULL'
       end
       ret
     end
