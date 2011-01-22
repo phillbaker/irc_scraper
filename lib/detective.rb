@@ -70,9 +70,20 @@ class Detective
     data_sql = data_quoted.join(', ')
     sql = %{INSERT INTO %s ( %s ) VALUES ( %s ) } % [self.class.table_name(), column_sql, data_sql]
     statement = @db.prepare(sql)
-    statement.execute!
     
-    #return the primary id of the row that was created:
-    @db.get_first_value("SELECT last_insert_rowid()")
+    #deal with multiple threads writing to db
+    try_again = 0
+    begin
+      statement.execute!
+    rescue Sqlite3Error => e
+      raise unless e.message =~ /locked/ || e.message =~ /busy/
+
+      if try_again < 5
+        try_again += 1
+        retry
+      else
+        raise
+      end
+    end
   end
 end

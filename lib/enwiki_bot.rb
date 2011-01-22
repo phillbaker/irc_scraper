@@ -67,7 +67,7 @@ class EnWikiBot < Bot #TODO db.close
   end
   
   def start_detective(info, clazz, message)
-      db = db_open(@name)
+      db = db_open(@name) #give it a new handle, to avoid multiple threads using the same handle
       detective = clazz.new(db)
       #mandatory wait period before investigating: 10s?
       sleep(10)
