@@ -64,14 +64,20 @@ module ThreadPooling
             Thread.new do
               loop do
                 item = @queue.pop
-                case item
-                when Array
-                  item[0].call(*item[1])
-                    # item[0] should be lambda; 
-                    # item[1] should be its args.
-                else
-                  item.call
-                end
+                #puts 'calling - queue size now: ' + @queue.size.to_s
+                #begin
+                  case item
+                  when Array
+                    item[0].call(*item[1])
+                      # item[0] should be lambda; 
+                      # item[1] should be its args.
+                  else
+                    item.call
+                  end
+                #rescue Exception => e
+                #  puts 'Exception in caller: ' + e.to_s
+                #  puts e.backtrace
+                #end
               end
             end
           )
@@ -125,7 +131,10 @@ module ThreadPooling
           @queue << [func,args]
         end
       end
-      @queue << block if block_given?
+      if block_given?
+        @queue << block 
+        #puts 'thread queue: ' + @queue.size.to_s
+      end
     end
 
   end

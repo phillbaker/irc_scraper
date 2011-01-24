@@ -38,7 +38,7 @@ class EnWikiBot < Bot #TODO db.close
     #https://github.com/danielbush/ThreadPool for info on the threadpool
     @workers = ThreadPooling::ThreadPool.new(20)
     @db_queue = Queue.new
-    puts @db_queue
+    #puts 'initial memory location: ' + @db_queue.to_s
     @db_results = {}
     start_db_worker()
     
@@ -53,12 +53,12 @@ class EnWikiBot < Bot #TODO db.close
   end
   
   def start_db_worker()
+    db = db_open(@name)
     @workers.dispatch do
-      db = db_open(@name)
       loop do #keep this thread running forever
         #this works because even if we turn off working, we'll have stuff queued and we'll loop in the inner loop until the queue is cleared
         until @db_queue.empty? do
-          begin
+          #begin
             sql, key = @db_queue.pop()
             statement = db.prepare(sql)
             statement.execute!
@@ -66,13 +66,14 @@ class EnWikiBot < Bot #TODO db.close
             if key #only do this if we need to return it
               id = db.get_first_value("SELECT last_insert_rowid()").to_s
               @db_results[key] = id
+              #puts 'wrote id: ' + key.to_s + ' ' + id
             end
-          rescue Exception => e
-            puts e
-            puts e.backtrace
-          ensure
+          #rescue Exception => e
+          #  puts 'Exception: ' + e.to_s
+          #  puts e.backtrace
+          #ensure
             #puts 'done writing'
-          end
+          #end
         end
       end
       #db.close unless db.closed?
@@ -90,7 +91,8 @@ class EnWikiBot < Bot #TODO db.close
       @detectives.each do |clazz|
         @workers.dispatch do
           #@log.error("starting #{@mypool.thread_count}")
-	        start_detective(info,clazz,message)
+          #let's be careful passing around objects here, we need to make sure that if we modifying them on different threads, that's okay...
+	        start_detective(info.dup,clazz,message)
         end
       end
     end
@@ -100,9 +102,11 @@ class EnWikiBot < Bot #TODO db.close
     #db = db_open(@name) #give it a new handle, to avoid multiple threads using the same handle
     detective = clazz.new(@db_queue)
     #wait for this to be written to the db
+    #puts 'waiting for id: ' + info.first.to_s
     loop do
        break if @db_results[info.first]
     end
+    #puts 'got id out'
     id = @db_results[info.first]
     info[0] = id
     #mandatory wait period before investigating to allow wikipedia changes to propagate: 10s?
@@ -111,7 +115,7 @@ class EnWikiBot < Bot #TODO db.close
       detective.investigate(info)
     rescue Exception => e
       str = "EXCEPTION: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.find{|i| i =~ /_detective/} } with #{message}"
-      @log.error str
+      #@log.error str
       #Thread.current.kill
       exp = Exception.new(str)
       exp.set_backtrace(e.backtrace.select{|i| i =~ /_detective/ })
