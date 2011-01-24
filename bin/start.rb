@@ -28,7 +28,7 @@ require 'irc_client.rb'
 require 'getoptlong'
 require 'rdoc/usage'
 
-IRC_LOG_FILE_PATH = IRC_LOG_DIR_PATH + '/bin.log'
+IRC_LOG_FILE_PATH = IRC_LOG_DIR_PATH + '/irc.log'
 
 opts = GetoptLong.new(
     [ '--help', '-h', GetoptLong::NO_ARGUMENT ],

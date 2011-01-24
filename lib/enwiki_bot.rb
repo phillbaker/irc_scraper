@@ -22,7 +22,8 @@ class EnWikiBot < Bot #TODO db.close
     #puts server + channel
 
     @table_name = server.gsub(/\./, '_') + '_' + channel.gsub(/\./, '_') #TODO this isn't really sanitized...use URI.parse
-    @log = Logger.new('errors.log') 
+    @error = Logger.new('log/bot.log') 
+    #@db_log = Logger.new('log/db.log')
     if db
       @db = db
       db_create_schema!(@table_name)
@@ -62,6 +63,7 @@ class EnWikiBot < Bot #TODO db.close
             sql, key = @db_queue.pop()
             statement = db.prepare(sql)
             statement.execute!
+            #@db_log.error sql[-20..-1] unless key #log last 20 characters if there's no key(ie from detectives)
             #the value to reference the written value at
             if key #only do this if we need to return it
               id = db.get_first_value("SELECT last_insert_rowid()").to_s
@@ -89,24 +91,21 @@ class EnWikiBot < Bot #TODO db.close
       #TODO build in some error handling/logging/queue to see if threads die/blow up and what we missed
 
       @detectives.each do |clazz|
-        @workers.dispatch do
-          #@log.error("starting #{@mypool.thread_count}")
+        clues = info.dup
+        @workers.dispatch do #on another thread
           #let's be careful passing around objects here, we need to make sure that if we modifying them on different threads, that's okay...
-	        start_detective(info.dup,clazz,message)
+	        start_detective(clues,clazz,message)
         end
       end
     end
   end
   
   def start_detective(info, clazz, message)
-    #db = db_open(@name) #give it a new handle, to avoid multiple threads using the same handle
     detective = clazz.new(@db_queue)
     #wait for this to be written to the db
-    #puts 'waiting for id: ' + info.first.to_s
     loop do
        break if @db_results[info.first]
     end
-    #puts 'got id out'
     id = @db_results[info.first]
     info[0] = id
     #mandatory wait period before investigating to allow wikipedia changes to propagate: 10s?
@@ -115,7 +114,7 @@ class EnWikiBot < Bot #TODO db.close
       detective.investigate(info)
     rescue Exception => e
       str = "EXCEPTION: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.find{|i| i =~ /_detective/} } with #{message}"
-      #@log.error str
+      @error.error str
       #Thread.current.kill
       exp = Exception.new(str)
       exp.set_backtrace(e.backtrace.select{|i| i =~ /_detective/ })
