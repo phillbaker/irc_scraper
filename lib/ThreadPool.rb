@@ -33,7 +33,7 @@ module ThreadPooling
 
     require 'thread'
 
-    attr_reader :threads , :thread_count
+    attr_reader :threads , :thread_count, :queue
     attr_writer :debug
 
     # Initialize a ThreadPool instance with 'num' number

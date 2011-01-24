@@ -39,10 +39,8 @@ class Detective
     end
   end #end class methods
   
-  attr_accessor :db
-  
-  def initialize db
-    @db = db
+  def initialize db_queue
+    @db_queue = db_queue
   end
   
   #main entry method for this class
@@ -69,21 +67,7 @@ class Detective
     end
     data_sql = data_quoted.join(', ')
     sql = %{INSERT INTO %s ( %s ) VALUES ( %s ) } % [self.class.table_name(), column_sql, data_sql]
-    statement = @db.prepare(sql)
-    
-    #deal with multiple threads writing to db
-    try_again = 0
-    begin
-      statement.execute!
-    rescue Sqlite3Error => e
-      raise unless e.message =~ /locked/ || e.message =~ /busy/
-
-      if try_again < 5
-        try_again += 1
-        retry
-      else
-        raise
-      end
-    end
+    @db_queue << [sql]
+    puts 'queued from detective to ' + @db_queue.to_s
   end
 end
