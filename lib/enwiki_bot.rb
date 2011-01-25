@@ -63,7 +63,7 @@ class EnWikiBot < Bot #TODO db.close
             sql, key = @db_queue.pop()
             statement = db.prepare(sql)
             statement.execute!
-            @db_log.error sql[-20..-1].strip unless key #log last 20 characters if there's no key(ie from detectives)
+            @db_log.error sql[11..20].strip unless key #log 20 characters (baseically table) if there's no key(ie from detectives)
             #the value to reference the written value at
             if key #only do this if we need to return it
               id = db.get_first_value("SELECT last_insert_rowid()").to_s
