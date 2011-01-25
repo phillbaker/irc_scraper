@@ -113,7 +113,7 @@ class EnWikiBot < Bot #TODO db.close
     begin
       detective.investigate(info)
     rescue Exception => e
-      str = "EXCEPTION: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.find{|i| i =~ /_detective/} } with #{message}"
+      str = "EXCEPTION: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.find{|i| i =~ /_detective|mediawiki/} } with #{message}"
       @error.error str
       #Thread.current.kill
       exp = Exception.new(str)
