@@ -21,18 +21,18 @@ def get_xml(params = {:format => :xml, :action => :query})#TODO put these in so 
   #requests without user-agents are refused. See:
   #http://www.mooduino.co.uk/2010/04/wikipedia-api-user-agent-string-in-php.html
   retries =2
-   begin
-     http = Net::HTTP.new(WIKI_API_SERVER) #en.wikipedia.org
-     resp = http.request_get(WIKI_API_PATH+url, 'User-Agent' => 'WikipediaAntiSpamBot/0.1 (+hincapie.cis.upenn.edu)')
+  begin
+    http = Net::HTTP.new(WIKI_API_SERVER) #en.wikipedia.org
+    resp = http.request_get(WIKI_API_PATH+url, 'User-Agent' => 'WikipediaAntiSpamBot/0.1 (+hincapie.cis.upenn.edu)')
   
-     raise "POST FAILED:" + resp.inspect unless resp.is_a? Net::HTTPOK or resp.is_a? Net::HTTPFound
-     resp.body
+    raise "POST FAILED:" + resp.inspect unless resp.is_a? Net::HTTPOK or resp.is_a? Net::HTTPFound
+    resp.body
   rescue Errno::ETIMEDOUT
-   if retries>0
+    if retries>0
       retries=retries-1
       retry
-   else
-      raise "Connection timed out after more than 3 retries"
+    else
+      raise Errno::ETIMEDOUT("Connection timed out after more than 3 retries").new
    end
   end
 end   
