@@ -20,12 +20,22 @@ def get_xml(params = {:format => :xml, :action => :query})#TODO put these in so 
   #TODO wonder if I should make a generic library for external url requests, to standardize the header/etc?
   #requests without user-agents are refused. See:
   #http://www.mooduino.co.uk/2010/04/wikipedia-api-user-agent-string-in-php.html
-  http = Net::HTTP.new(WIKI_API_SERVER) #en.wikipedia.org
-  resp = http.request_get(WIKI_API_PATH+url, 'User-Agent' => 'WikipediaAntiSpamBot/0.1 (+hincapie.cis.upenn.edu)')
+  retries =2
+   begin
+     http = Net::HTTP.new(WIKI_API_SERVER) #en.wikipedia.org
+     resp = http.request_get(WIKI_API_PATH+url, 'User-Agent' => 'WikipediaAntiSpamBot/0.1 (+hincapie.cis.upenn.edu)')
   
-  raise "POST FAILED:" + resp.inspect unless resp.is_a? Net::HTTPOK or resp.is_a? Net::HTTPFound
-  resp.body #get xml
-end
+     raise "POST FAILED:" + resp.inspect unless resp.is_a? Net::HTTPOK or resp.is_a? Net::HTTPFound
+     resp.body
+  rescue Errno::ETIMEDOUT
+   if retries>0
+      retries=retries-1
+      retry
+   else
+      raise "Connection timed out after more than 3 retries"
+   end
+  end
+end   
 
 #helper function to form the parameters of the get request
 def _form_url(params)

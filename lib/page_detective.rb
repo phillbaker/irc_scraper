@@ -60,8 +60,11 @@ SQL
     #http://en.wikipedia.org/w/api.php?action=query&prop=revisions&revids=230948209&rvprop=content
     xml = get_xml({:format => :xml, :action => :query, :prop => :revisions, :revids => info[3], :rvprop => 'content'})
     res2 = parse_xml(xml)
-    source = res2.first['pages'].first['page'].first['revisions'].first['rev'].first['content'].to_s
-  
+    source = ''
+    if(res.first['badrevids'] == nil)
+      source = res2.first['pages'].first['page'].first['revisions'].first['rev'].first['content'].to_s
+    end   
+
     #http://en.wikipedia.org/w/api.php?action=query&titles=Albert%20Einstein&prop=info&inprop=protection|talkid
     xml = get_xml({:format => :xml, :action => :query, :revids => info[4], :prop => :info, :inprop => 'protection|talkid'})
     res3 = parse_xml(xml)
