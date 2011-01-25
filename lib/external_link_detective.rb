@@ -115,18 +115,20 @@ SQL
     http = Net::HTTP.new(uri.host)
     resp = nil
     begin
-      resp = http.request_get(uri.path, 'User-Agent' => 'WikipediaAntiSpamBot/0.1 (+hincapie.cis.upenn.edu)')
+      path = uri.path.to_s.empty? ? '/' : uri.path
+      resp = http.request_get(path, 'User-Agent' => 'WikipediaAntiSpamBot/0.1 (+hincapie.cis.upenn.edu)')
     rescue SocketError => e
       resp = e
     end
     
     ret = []
-    if(resp.is_a? Net::HTTPOK or resp.is_a? Net::HTTPFound)
-      ret << resp.body[0..10**5] #truncate at 100kb; not a good way to deal with size, should check the headers only
+    if((resp.is_a? Net::HTTPOK or resp.is_a? Net::HTTPFound))
+      if resp.content_type == 'text/html'
+        ret << resp.body[0..10**5] #truncate at 100kb; not a good way to deal with size, should check the headers only
+      else
+        ret << resp.content_type
+      end
       ret << true
-    elsif resp.content_type != "text/html"
-      ret << resp.content_type
-      ret << false
     else
       ret << resp.class.to_s
       ret << false

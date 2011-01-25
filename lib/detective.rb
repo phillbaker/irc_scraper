@@ -68,6 +68,7 @@ class Detective
     data_sql = data_quoted.join(', ')
     sql = %{INSERT INTO %s ( %s ) VALUES ( %s ) } % [self.class.table_name(), column_sql, data_sql]
     @db_queue << [sql]
+    true
     #puts 'queued from detective to ' + @db_queue.size.to_s #@db_queue.to_s
   end
 end
