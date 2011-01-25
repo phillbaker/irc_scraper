@@ -23,7 +23,7 @@ class EnWikiBot < Bot #TODO db.close
 
     @table_name = server.gsub(/\./, '_') + '_' + channel.gsub(/\./, '_') #TODO this isn't really sanitized...use URI.parse
     @error = Logger.new('log/bot.log') 
-    #@db_log = Logger.new('log/db.log')
+    @db_log = Logger.new('log/db.log')
     if db
       @db = db
       db_create_schema!(@table_name)
@@ -63,7 +63,7 @@ class EnWikiBot < Bot #TODO db.close
             sql, key = @db_queue.pop()
             statement = db.prepare(sql)
             statement.execute!
-            #@db_log.error sql[-20..-1] unless key #log last 20 characters if there's no key(ie from detectives)
+            @db_log.error sql[-20..-1].strip unless key #log last 20 characters if there's no key(ie from detectives)
             #the value to reference the written value at
             if key #only do this if we need to return it
               id = db.get_first_value("SELECT last_insert_rowid()").to_s
