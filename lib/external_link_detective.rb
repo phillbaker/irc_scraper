@@ -108,7 +108,8 @@ SQL
   end
   
   def find_source(url)
-    #source = Net::HTTP.get(URI.parse(url))
+    #TODO do a check for the size and type-content of it before we pull it
+    #binary files we probably don't need to grab and things larger than a certain size we don't want to grab
     uri = URI.parse(url)
     
     http = Net::HTTP.new(uri.host)
@@ -121,12 +122,16 @@ SQL
     
     ret = []
     if(resp.is_a? Net::HTTPOK or resp.is_a? Net::HTTPFound)
-      ret << resp.body
+      ret << resp.body[0..10**5] #truncate at 100kb; not a good way to deal with size, should check the headers only
       ret << true
+    elsif resp.content_type != "text/html"
+      ret << resp.content_type
+      ret << false
     else
       ret << resp.class.to_s
       ret << false
     end
+    ret
     # response = Net::HTTP.get_response(URI.parse(uri_str))
     # case response
     # when Net::HTTPSuccess     then response
@@ -140,9 +145,6 @@ SQL
     #  response = http.head('/index.html')
     #}
     #p response['content-type']
-      
-    #TODO do a check for the size and type-content of it before we pull it
-    #binary files we probably don't need to grab and things larger than a certain size we don't want to grab
   end
   
 end
