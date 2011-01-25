@@ -1,7 +1,10 @@
 require 'detective.rb'
 require 'mediawiki_api.rb'
 require 'uri'
+require 'cgi'
 require 'net/http'
+require 'bundler/setup'
+require 'nokogiri'
 
 class ExternalLinkDetective < Detective
   def self.table_name
@@ -18,6 +21,7 @@ class ExternalLinkDetective < Detective
       http_response boolean,
       link string,
       source text,
+      description text,
       created DATE DEFAULT (datetime('now','localtime')),
       FOREIGN KEY(revision_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)   --TODO this table name probably shouldn't be hard coded
 SQL
@@ -38,16 +42,16 @@ SQL
         
     linkarray = find_link_info(info)
     
-    rownum = 0
     linkarray.each do |linkentry|
-      rownum = db_write!(
-        ['revision_id', 'link', 'source'],
-	      [info[0], linkentry["link"], linkentry["source"]]
+      db_write!(
+        ['revision_id', 'link', 'source', 'description'],
+	      [info[0], linkentry["link"], linkentry["source"], linkentry["description"]]
 	    )
     end	
-    rownum
+    true
   end	
   
+  #really only uses revid and previous
   def find_link_info info
     #this is actually 'page' stuff
     #take popularity from: http://www.trendingtopics.org/page/[article_name]; links to csv's with daily and hourly popularity
@@ -66,45 +70,42 @@ SQL
 
     #this is what we're going to do: get all external links for prev_id and all external links for curr_id and diff them, any added => new extrnal links to find
     #http://en.wikipedia.org/w/api.php?action=query&prop=extlinks&revids=800129
-    xml = get_xml({:format => :xml, :action => :query, :prop => :extlinks, :revids => info[3]})
-    res = parse_xml(xml)
-    links_new = res.first['pages'].first['page'].first['extlinks']
-    if(links_new != nil)
-	    links_new = links_new.first['el']
-    else
-	    links_new = []
-    end
-    links_new.collect! do |link|
-      link['content']
-    end
-
-    xml= get_xml({:format => :xml, :action => :query, :prop => :extlinks, :revids => info[4]})
-    res = parse_xml(xml)
-    #can have bad revid's (ie first edits on a page)
-    links_old = []
-    if(res.first['badrevids'] == nil)
-      links_old = res.first['pages'].first['page'].first['extlinks']
-
-      if(links_old != nil)
-  	    links_old = links_old.first['el']
-      else
-  	    links_old = []
-      end
-      links_old.collect! do |link|
-        link['content']
-      end
-    end
+    #http://en.wikipedia.org/w/api.php?action=query&prop=extlinks&revids=409897423&ellimit=500
+    #http://en.wikipedia.org/w/api.php?action=query&prop=extlinks&revids=409897009&ellimit=500
+    #diff text: http://en.wikipedia.org/w/api.php?action=query&prop=revisions&revids=409897423&rvdiffto=prev
+    xml = get_xml({:format => :xml, :action => :query, :prop => :revisions, :revids => info[3], :rvdiffto => 'prev'})
+    diff_text = Nokogiri.XML(xml).css('diff').children.to_s
+    diff_html = CGI.unescapeHTML(diff_text)
+    noked = Nokogiri.HTML(diff_html)
     
-
-    linkdiff = links_new - links_old
-    
+    #TODO can have bad revid's (ie first edits on a page)
     linkarray = []
-    linkdiff.each do |link|
-      #puts 'found a link!'
-      source,success = find_source(link)
-      linkarray << {"link" => link, "source" => source, "http_response" => success}
+    noked.css('.diff-addedline').each do |td| #TODO should probably be looking specifically at .diffchange children for added text within the line
+      revision_line = Nokogiri.HTML(CGI.unescapeHTML(td.children.to_s)).css('div').children
+      #http://daringfireball.net/2010/07/improved_regex_for_matching_urls
+      #%r{(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))}
+      url = %r{(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))}
+      #based on http://www.mediawiki.org/wiki/Markup_spec/BNF/Links
+      external_link_regex = /\[(#{url}\s*(.*?))\]/
+      #TODO pull any correctly formed links too?
+      res = revision_line.to_s.scan(external_link_regex)
+      if res.size > 0
+        #p res
+        res = res.first.compact
+        #["http://www.eyemagazine.com/feature.php?id=62&amp;fid=270 Designing heroes", "http://www.eyemagazine.com/feature.php?id=62&amp;fid=270", "Designing heroes"]
+        linkarray << [res[1], #link
+                      res[2]] #description
+      end
     end
-    linkarray
+    
+    ret = []
+    linkarray.each do |arr|
+      #puts arr.first
+      source, success = find_source(arr.first)
+      #puts find_source(arr.first)[0..100]
+      ret << {"link" => arr.first, "source" => source, "http_response" => success, 'description' => arr.last}
+    end
+    ret
   end
   
   def find_source(url)
@@ -115,16 +116,17 @@ SQL
     http = Net::HTTP.new(uri.host)
     resp = nil
     begin
-      path = uri.path.to_s.empty? ? '/' : uri.path
+      path = uri.path.to_s.empty? ? '/' : "#{uri.path}?#{uri.query}"
       resp = http.request_get(path, 'User-Agent' => 'WikipediaAntiSpamBot/0.1 (+hincapie.cis.upenn.edu)')
     rescue SocketError => e
       resp = e
     end
     
     ret = []
-    if((resp.is_a? Net::HTTPOK or resp.is_a? Net::HTTPFound))
+    if(resp.is_a? Net::HTTPOK or resp.is_a? Net::HTTPFound)
       if resp.content_type == 'text/html'
-        ret << resp.body[0..10**5] #truncate at 100kb; not a good way to deal with size, should check the headers only
+        #puts resp.body.length
+        ret << resp.body[0..10**5] #truncate at 100K characters; not a good way to deal with size, should check the headers only
       else
         ret << resp.content_type
       end

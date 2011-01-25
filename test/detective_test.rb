@@ -7,7 +7,8 @@ class DetectiveTest < Test::Unit::TestCase
   def setup
     #create in-memory sqlitedb
     @db = SQLite3::Database.new(":memory:")
-    @detective = Detective.new(@db)
+    @queue = []
+    @detective = Detective.new(@queue)
   end
   
   def test_table_exists?
@@ -53,6 +54,17 @@ class DetectiveTest < Test::Unit::TestCase
     Detective.setup_table(@db)
     assert(1, @detective.db_write!(['id', 'value'], [1, "te'xt"]))
     assert(2, @detective.db_write!(['id', 'value'], [2, "te''xt"]))
+  end
+  
+  def test_weird_chars
+    Detective.setup_table(@db)
+    assert(1, @detective.db_write!(['id', 'value'], [1, 1.234]))
+    assert(2, @detective.db_write!(['id', 'value'], [2, 1]))
+    assert(3, @detective.db_write!(['id', 'value'], [3, '0%0df']))
+    @queue.each do |sql|
+      #puts sql
+      @db.execute_batch(sql.first)
+    end
   end
   
 end
