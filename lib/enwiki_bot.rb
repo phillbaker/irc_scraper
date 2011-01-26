@@ -4,6 +4,7 @@ require 'author_detective.rb'
 require 'revision_detective.rb'
 require 'page_detective.rb'
 require 'external_link_detective.rb'
+require 'mediawiki_api.rb'
 
 require 'rubygems'
 require 'sqlite3'
@@ -11,6 +12,9 @@ require 'thread'
 require 'digest/md5'
 require 'ThreadPool.rb'
 require 'logger'
+
+require 'bundler/setup'
+require 'nokogiri'
 
 class EnWikiBot < Bot #TODO db.close
   
@@ -98,15 +102,72 @@ class EnWikiBot < Bot #TODO db.close
       ## so should the detective classes be static, so there's no chance of trying to access shared resources at the same time?
       #TODO build in some error handling/logging/queue to see if threads die/blow up and what we missed
       if should_follow?(info)
-        @detectives.each do |clazz|
-          clues = info.dup
-          @workers.dispatch do #on another thread
-            #let's be careful passing around objects here, we need to make sure that if we modifying them on different threads, that's okay...
-  	        start_detective(clues,clazz,message)
+        #do the rest of this on threads - it could be slow, don't block
+        @workers.dispatch do
+          data = get_diff_data(info[3])
+          if has_link?(data)
+            @detectives.each do |clazz|
+              clues = info.dup
+              @workers.dispatch do #on another thread
+                #let's be careful passing around objects here, we need to make sure that if we modifying them on different threads, that's okay...
+      	        start_detective(clues,clazz,message)
+              end
+            end
           end
         end
       end
     end
+  end
+  
+  #determines if there's at least 1 link in the revision
+  #returns diff text, 
+  def has_link? xml_diff_unescaped
+    diff_text = Nokogiri.XML(xml).css('diff').children.to_s
+    diff_html = CGI.unescapeHTML(diff_text)
+    
+    
+  end
+  
+  def get_diff_data rev_id
+    #http://en.wikipedia.org/w/api.php?action=query&prop=revisions&revids=363492332&rvdiffto=prev&rvprop=ids|flags|timestamp|user|size|comment|parsedcomment|tags|flagged
+    xml = get_xml({:format => :xml, :action => :query, :prop => :revisions, :revids => rev_id, :rvdiffto => 'prev', :rvprop => 'ids|flags|timestamp|user|size|comment|parsedcomment|tags|flagged' })
+    noked = Nokogiri.XML(xml)
+    attrs = {}
+    #page attributes
+    # pageid = 
+    # ns = 
+    # title = 
+    # tags = 
+    noked.css('page').first.attributes.each do |k,v|
+      attrs[v.name] = v.value
+    end
+    
+    #rev attributes
+    # revid
+    # parentid
+    # minor
+    # user
+    # timestamp
+    # size
+    # comment
+    noked.css('rev').first.attributes.each do |k,v|
+      attrs[v.name] = v.value
+    end
+    
+    #tags
+    tags = []
+    noked.css('tags').children.each do |child|
+      tags << child.children.to_s
+    end
+    
+    #diff attributes
+    diff_elem = noked.css('diff')
+    diff_elem.first.attributes.each do |k,v|
+      attrs[v.name] = v.value
+    end
+    diff = diff_elem.children.to_s
+    
+    [diff, attrs, tags]
   end
   
   #look at title, exclude titles starting with: User talk, Talk, Wikipedia, User, etc.
@@ -151,24 +212,21 @@ class EnWikiBot < Bot #TODO db.close
   # 4: old_id (string)
   # 5: user (string), 
   # 6: byte_diff (int), 
-  # 7: timestamp (Time object), 
-  # 8: description (string)
+  # 7: description (string)
   def store! message
     fields = []
     fields = process_irc(message)
     #TODO for some reason, a bunch of messages get cut off and we don't get the entire thing...but then it shouldn't appear here...the regexp above should clear it...
     raise Exception.new("ERROR: message didn't parse") if fields == nil
     
-    time = Time.now
-    
     fields[2] = fields[2].to_i
     fields[3] = fields[3].to_i
     fields[5] = fields[5].to_i
     
-    key = db_write! [fields[0], fields[1], fields[2], fields[3], fields[4], fields[5], time.to_i, fields[6]]
+    key = db_write! [fields[0], fields[1], fields[2], fields[3], fields[4], fields[5], fields[6]]
     
     #return the info used to create this so we can just pass them in code instead of querying the db
-    [key, fields[0], fields[1], fields[2], fields[3], fields[4], fields[5], time, fields[6]]
+    [key, fields[0], fields[1], fields[2], fields[3], fields[4], fields[5], fields[6]]
   end
 
   #given the irc announcement in the irc monitoring channel for en.wikipedia, this returns the different fields
