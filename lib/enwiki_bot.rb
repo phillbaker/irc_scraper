@@ -47,8 +47,8 @@ class EnWikiBot < Bot #TODO db.close
     start_db_worker()
     
     #Thread.abort_on_exception = true #set this so that if there's an exception on any of these threads, everything quits - good for initial debugging
-    #@detectives = [RevisionDetective.new(@db), AuthorDetective.new(@db), ExternalLinkDetective.new(@db), PageDetective.new(@db)]
-    @detectives = [RevisionDetective, AuthorDetective, ExternalLinkDetective, PageDetective]
+    #@detectives = [RevisionDetective, AuthorDetective, ExternalLinkDetective, PageDetective]
+    @detectives = [ExternalLinkDetective]
     @detectives.each do |clazz|
       clazz.setup_table(@db)
     end
@@ -97,15 +97,23 @@ class EnWikiBot < Bot #TODO db.close
       #call our methods in other threads: Process.fork (=> actual system independent processes) or Thread.new = in ruby vm psuedo threads?
       ## so should the detective classes be static, so there's no chance of trying to access shared resources at the same time?
       #TODO build in some error handling/logging/queue to see if threads die/blow up and what we missed
-
-      @detectives.each do |clazz|
-        clues = info.dup
-        @workers.dispatch do #on another thread
-          #let's be careful passing around objects here, we need to make sure that if we modifying them on different threads, that's okay...
-	        start_detective(clues,clazz,message)
+      if should_follow?(info)
+        @detectives.each do |clazz|
+          clues = info.dup
+          @workers.dispatch do #on another thread
+            #let's be careful passing around objects here, we need to make sure that if we modifying them on different threads, that's okay...
+  	        start_detective(clues,clazz,message)
+          end
         end
       end
     end
+  end
+  
+  #look at title, exclude titles starting with: User talk, Talk, Wikipedia, User, etc.
+  def should_follow? info 
+    @irc_log.info('not following: ' + info[1])
+    bad_beg_regex = /^(Talk:|User:|User\stalk:|Wikipedia:|Wikipedia\stalk:|File\stalk:|MediaWiki:|MediaWiki\stalk:|Template\stalk:|Help:|Help\stalk:|Category\stalk:|Thread:|Thread\stalk:|Summary\stalk:|Portal\stalk:|Book\stalk:|Special:|Media:)/
+    !(info[1] =~ bad_beg_regex)
   end
   
   def start_detective(info, clazz, message)
