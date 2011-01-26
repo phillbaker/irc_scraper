@@ -26,6 +26,7 @@ class EnWikiBot < Bot #TODO db.close
     @db_log = Logger.new('log/db.log')
     @db_log_main = Logger.new('log/db_main.log')
     @db_log_link = Logger.new('log/link.log')
+    @irc_log = Logger.new('log/feed.log')
     if db
       @db = db
       db_create_schema!(@table_name)
@@ -90,6 +91,7 @@ class EnWikiBot < Bot #TODO db.close
   
   def hear(message)
     if should_store?(message)
+      @irc_log.info(message[0..100])
       info = store!(message)
       #puts 'stored'
       #call our methods in other threads: Process.fork (=> actual system independent processes) or Thread.new = in ruby vm psuedo threads?
