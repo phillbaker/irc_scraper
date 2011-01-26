@@ -47,6 +47,8 @@ module ThreadPooling
       @mutex = Mutex.new
         # Private mutex.
       self.increment(num)
+      require 'logger'
+      @logger = Logger.new('log/pool.log')
     end
 
     def debug msg
@@ -64,7 +66,14 @@ module ThreadPooling
             Thread.new do
               loop do
                 item = @queue.pop
-                #puts 'calling - queue size now: ' + @queue.size.to_s
+                #print out a bit mask of whether each thread in the pull is currently active/dead/etc.
+                #sleep, run, aborting, false (terminated normally), nil (terminated with exception)
+                #look at inspect() of each thread
+                #bit mask of threads running
+                #puts @queue.size.to_s + ' ' + @threads.collect{|o| o.status.to_s[0..0] }.to_s
+                #bit mask of threads sleeping
+                #bit maks of threads dead
+                @logger.info @queue.size.to_s + ' ' + @threads.collect{|o| o.status.to_s[0..0] }.to_s
                 #begin
                   case item
                   when Array

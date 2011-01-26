@@ -39,7 +39,7 @@ class EnWikiBot < Bot #TODO db.close
     @name = bot_name
     
     #https://github.com/danielbush/ThreadPool for info on the threadpool
-    @workers = ThreadPooling::ThreadPool.new(20)
+    @workers = ThreadPooling::ThreadPool.new(250) #base this on a rough guesstimate of how many seconds of work we get per second
     @db_queue = Queue.new
     #puts 'initial memory location: ' + @db_queue.to_s
     @db_results = {}
@@ -61,7 +61,7 @@ class EnWikiBot < Bot #TODO db.close
       loop do #keep this thread running forever
         #this works because even if we turn off working, we'll have stuff queued and we'll loop in the inner loop until the queue is cleared
         until @db_queue.empty? do
-          #begin
+          begin
             sql, key = @db_queue.pop()
             statement = db.prepare(sql)
             statement.execute!
@@ -74,12 +74,14 @@ class EnWikiBot < Bot #TODO db.close
               @db_results[key] = id
               #puts 'wrote id: ' + key.to_s + ' ' + id
             end
-          #rescue Exception => e
-          #  puts 'Exception: ' + e.to_s
-          #  puts e.backtrace
+          rescue Exception => e
+            @db_log.info e
+            @db_log.info e.backtrace
+            #puts 'Exception: ' + e.to_s
+            #puts e.backtrace
           #ensure
             #puts 'done writing'
-          #end
+          end
         end
       end
       #db.close unless db.closed?

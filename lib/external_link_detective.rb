@@ -88,7 +88,7 @@ SQL
       #based on http://www.mediawiki.org/wiki/Markup_spec/BNF/Links
       external_link_regex = /\[(#{url}\s*(.*?))\]/
       #TODO pull any correctly formed links too?
-      res = revision_line.to_s.scan(external_link_regex)
+      res = revision_line.to_s.scan(external_link_regex) #TODO test this on pages with multiple links...
       if res.size > 0
         #p res
         res = res.first.compact
