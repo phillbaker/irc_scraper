@@ -97,7 +97,7 @@ class ExternalLinkDetectiveTest < Test::Unit::TestCase
     #410394508
     # http://en.wikipedia.org/wiki/Herbert_McCabe|Herbert
     assert_nothing_raised do
-      #with a down url
+      #with a wikipedia url
       @detective.investigate([[nil, nil, 410410115], [nil] * 7, [['http://en.wikipedia.org/wiki/Herbert_McCabe|Herbert', '']]])
     end
     assert_nothing_raised do
@@ -106,8 +106,32 @@ class ExternalLinkDetectiveTest < Test::Unit::TestCase
     end
     #410430950 www.spanishdict.com
     assert_nothing_raised do
-      #with a down url
+      #with out http
       @detective.investigate([[nil, nil, 410430950], [nil] * 7, [['www.spanishdict.com', '']]])
+    end
+    
+    assert_nothing_raised do
+      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.ellisislandimmigrants.org/ellis_island_archives.htm', '']]])
+      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://82.165.253.62/quarterly/spr06/kissing.pdf', '']]])
+      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://sumagazine.syr.edu/summer03/alumnijournal/index.html', '']]])
+      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.answers.com/topic/ring-of-the-fisherman', '']]])
+      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.religionfacts.com/christianity/things/icons.htm', '']]])
+      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.history.com/minisite.do?content_type=Minisite_Generic&amp;content_type_id=50231&amp;display_order=2&amp;sub_display_order=8&amp;mini_id=1459', '']]])
+      #@detective.investigate([[nil, nil, 410444868], [nil] * 7, [['', '']]])
+    end
+    #410445179 
+    assert_nothing_raised do
+      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://books.google.com/books?id=ZA4EAAAAMBAJ&amp;pg=PA24&amp;lpg=PA24&amp;dq=Diva:+The+Singles+Collection+sarah+brightman++Nielsen+SoundScan&amp;source=bl&amp;ots=0IC5s6ktyq&amp;sig=0blfM6hOIZcIBQQq96_INMcPDqU&amp;hl=es&amp;ei=mrUmTer0GIep8Ab1_cWrAQ&amp;sa=X&amp;oi=book_result&amp;ct=result&amp;resnum=8&amp;ved=0CFYQ6AEwBw#v=onepage&amp;q=Diva%3A%20The%20Singles%20Collection%20sarah%20brightman%20%20Nielsen%20SoundScan&amp;f=false', '']]])
+      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.billboard.biz/bbbiz/content_display/industry/news/e3i4cdea7d2a4bcd3986f84169caf3af94d', '']]])
+    end
+    #410445320 http://thepianoparlour.squarespace.com/whats-opera-doc/
+    assert_nothing_raised do
+      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.ellisislandimmigrants.org/ellis_island_archives.htm', '']]])
+      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://sumagazine.syr.edu/summer03/alumnijournal/index.html', '']]])
+      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.answers.com/topic/ring-of-the-fisherman', '']]])
+      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.religionfacts.com/christianity/things/icons.htm', '']]])
+      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.history.com/minisite.do?content_type=Minisite_Generic&amp;content_type_id=50231&amp;display_order=2&amp;sub_display_order=8&amp;mini_id=1459', '']]])
+      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://82.165.253.62/quarterly/spr06/kissing.pdf', '']]])
     end
   end
   

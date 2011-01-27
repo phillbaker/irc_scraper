@@ -255,6 +255,8 @@ class EnWikiBot < Bot #TODO db.close
       #exp = Exception.new(str)
       #exp.set_backtrace(e.backtrace.select{|i| i =~ /_detective/ })
       #raise exp
+    rescue
+      @error.error('other catching block')
     ensure
       unless done
         @error.error("ERROR at investigate with #{clues[0]} (#{clues[2]}) #{clues.last.collect{|o| o.first }.join(', ')}") 

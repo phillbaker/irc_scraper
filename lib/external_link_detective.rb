@@ -96,7 +96,7 @@ SQL
       end
       #shallow convert all keys to lowercased symbols
       ret << resp.to_hash.inject({}){|memo,(k,v)| memo[k.to_s.downcase.to_sym] = v; memo} #the headers
-    rescue SocketError => e
+    rescue Errno::ETIMEDOUT, SocketError => e
       ret << e.class.to_s
       ret << {}
     end
