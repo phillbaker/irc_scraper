@@ -62,17 +62,23 @@ SQL
     #TODO do a check for the size and type-content of it _before_ we pull it
     #binary files we probably don't need to grab and things larger than a certain size we don't want to grab
     #uri = URI.parse(url)# this doesn't like wikipeida urls like http://en.wikipedia.org/wiki/Herbert_McCabe|Herbert
-    url_regex = /^(.*?\/\/[^\/]*)(.*)$/x #break it up like this, we're using urls that URI doesn't parse
+    url_regex = /^(.*?\/\/)([^\/]*)(.*)$/x #break it up like this, we're using urls that URI doesn't parse
+    #deal with links stargin with 'www', if they get entered into wikilinks like that they count!
+    unless url =~ url_regex #TODO this is silly if we're just stripping it off below
+      url = "http://#{url}"
+    end
     parts = url.scan(url_regex)
-    host = parts.first[0]
-    path = parts.first[1]
+    #p parts
+    host = parts.first[1] #this should not have the protocol, it's the domain name with 
+    path = parts.first[2] #this should be at least a '/' and have the entire query
     
     http = Net::HTTP.new(host)
     resp = nil
     ret = []
     begin
+      #puts host + path
       resp = http.request_get(
-        path.empty? ? '/' : path, 
+        path.empty? ? '/' : path, #deal with no trailing slash
         'User-Agent' => 'WikipediaAntiSpamBot/0.1 (+hincapie.cis.upenn.edu)'
       )
       
@@ -82,9 +88,10 @@ SQL
         if resp.content_type == 'text/html'
           ret << resp.body[0..10**5]
         else
-          ret << resp.content_type
+          ret << resp.content_type #for binary files
         end
       else
+        #puts resp.class
         ret << resp.class.to_s
       end
       #shallow convert all keys to lowercased symbols
@@ -92,19 +99,8 @@ SQL
     rescue SocketError => e
       ret << e.class.to_s
       ret << {}
-    #ensure
-      #if resp is a SocketError, let's raise an error
-      #resp
     end
     
-    # #resp is either the exception or the response
-    #     ret = [] #TODO make this a hash
-    #     
-    #     else #TODO follow redirects!
-    #       #if it's a bad http response set the body equal to that response
-    #       ret << resp.class.to_s
-    #       ret << {} #(resp.respond_to?(:to_hash) && !resp.is_a?(SocketError)) ? resp.to_hash : 
-    #     end
     ret
   end
   

@@ -104,6 +104,11 @@ class ExternalLinkDetectiveTest < Test::Unit::TestCase
       #with a down url; this takes forever...
     #  @detective.investigate([[nil, nil, 410395683], [nil] * 7, [['http://www.bomis.com/about/bomis_faq.html', '']]])
     end
+    #410430950 www.spanishdict.com
+    assert_nothing_raised do
+      #with a down url
+      @detective.investigate([[nil, nil, 410430950], [nil] * 7, [['www.spanishdict.com', '']]])
+    end
   end
   
   # def test_find_link_info
