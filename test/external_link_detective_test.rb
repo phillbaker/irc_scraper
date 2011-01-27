@@ -19,10 +19,10 @@ class ExternalLinkDetectiveTest < Test::Unit::TestCase
     @clazz = ExternalLinkDetective
     @queue = []
     @detective = @clazz.new(@queue)
+    @clazz.setup_table(@db)
   end
   
   def test_investigate
-    @clazz.setup_table(@db)
     #old info:
     # [2,
     #   'Vladimir Guerrero',
@@ -69,6 +69,25 @@ class ExternalLinkDetectiveTest < Test::Unit::TestCase
     
     source = @detective.find_source('http://pqualsdkjfladf.com/asdfasdf') #non-existent url
     assert_equal('SocketError', source)
+  end
+  
+  def test_okay_with_gzip
+    source = @detective.find_source('http://www.colocolo.cl/2009/07/plantel/')
+    assert_equal(source.last[:'content-encoding'].first, 'gzip')
+    
+    assert_nothing_raised do
+      res = @detective.investigate([[nil, nil, 410312383], [nil] * 7, [['http://www.colocolo.cl/2009/07/plantel/', '']]])
+    end
+  end
+  
+  def test_uncaught_errors
+    #410371611
+    #410394508
+    
+    assert_nothing_raised 
+      #with a down url
+      @detective.investigate([[nil, nil, 410395683], [nil] * 7, [['http://www.bomis.com/about/bomis_faq.html', '']]])
+    end
   end
   
   # def test_find_link_info
@@ -277,11 +296,6 @@ class ExternalLinkDetectiveTest < Test::Unit::TestCase
   #     assert_equal(['many'], res)
   #   end
   #   
-  #   def test_finds_urls_not_spaced
-  #     #rev_id = 
-  #     res = @detective.find_link_info([nil, nil, nil, 363492332]).first
-  #     assert_equal(['many'], res)
-  #   end
   #   
   #   #TODO test http://en.wikipedia.org/w/index.php?title=Anthropocene&diff=next&oldid=362701983 <- edit that is partially url and partially not
 end

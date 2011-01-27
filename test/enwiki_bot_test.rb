@@ -121,10 +121,6 @@ class EnWikiBotTest < Test::Unit::TestCase
     
   end
   
-  def test_has_link?
-    #TODO
-  end
-  
   def test_get_diff_data
     #http://en.wikipedia.org/w/api.php?action=query&prop=revisions&revids=363492332&rvdiffto=prev&rvprop=ids|flags|timestamp|user|size|comment|parsedcomment|tags|flagged
     res = @bot.get_diff_data(363492332)#no tags
@@ -162,6 +158,303 @@ class EnWikiBotTest < Test::Unit::TestCase
       "space"=>"preserve",
       "pageid"=>"3421830"},
      ["possible link spam"]], res)
+  end
+  
+  def test_has_link?
+    #TODO
+  end
+  
+  def test_finds_urls_not_spaced
+    #rev_id = 363492332
+    xml = <<-END
+    &lt;tr&gt;
+      &lt;td colspan="2" class="diff-lineno"&gt;Line 25:&lt;/td&gt;
+      &lt;td colspan="2" class="diff-lineno"&gt;Line 25:&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class="diff-marker"&gt; &lt;/td&gt;
+      &lt;td class="diff-context"&gt;&lt;div&gt;===United States and Canada: dioceses, parishes and missions===&lt;/div&gt;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt; &lt;/td&gt;
+      &lt;td class="diff-context"&gt;&lt;div&gt;===United States and Canada: dioceses, parishes and missions===&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class="diff-marker"&gt; &lt;/td&gt;
+      &lt;td class="diff-context"&gt;&lt;div&gt;==== Churches which ordain women and LGBT people ====&lt;/div&gt;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt; &lt;/td&gt;
+      &lt;td class="diff-context"&gt;&lt;div&gt;==== Churches which ordain women and LGBT people ====&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan="2"&gt;&amp;nbsp;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt;+&lt;/td&gt;
+      &lt;td class="diff-addedline"&gt;&lt;div&gt;* [http://www.free-catholic.org/ Christ's Catholic Church: An Ecumenical Free Catholic Communion in the Old Catholic Tradition]&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan="2"&gt;&amp;nbsp;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt;+&lt;/td&gt;
+      &lt;td class="diff-addedline"&gt;&lt;div&gt;** [http://epiphanydiocese.wordpress.com/ Diocese of the Epiphany] Bp. David Cronan - Chicago, Illinois affiliated with [http://www.free-catholic.org Christ's Catholic Church]&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan="2"&gt;&amp;nbsp;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt;+&lt;/td&gt;
+      &lt;td class="diff-addedline"&gt;&lt;div&gt;**  Diocese of Saint Brendan the Navigator Bp. Andrew Eugene Kyle - Cambridge - Ohio affiliated with [http://www.free-catholic.org Christ's Catholic Church]&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan="2"&gt;&amp;nbsp;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt;+&lt;/td&gt;
+      &lt;td class="diff-addedline"&gt;&lt;div&gt;** [http://freecatholic.wordpress.com/ Diocese of the Road to Emmaus] Bp. Mary Ann Croisant - Ashville, North Carolina affiliated with [http://www.free-catholic.org Christ's Catholic Church]&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan="2"&gt;&amp;nbsp;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt;+&lt;/td&gt;
+      &lt;td class="diff-addedline"&gt;&lt;div&gt;** [http://www.shepherds-heart.org/ Diocese of the Shepherd's Heart] Bp. Brian Ernest Brown - Hollister, Missouri affiliated with [http://www.free-catholic.org Christ's Catholic Church]&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan="2"&gt;&amp;nbsp;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt;+&lt;/td&gt;
+      &lt;td class="diff-addedline"&gt;&lt;div&gt;** [http://fcmcktacoma.org/ The Episcopal Ministries of Saint John the Evangelist] Bp. Dave Pflueger - Tacoma, Washington affiliated with [http://www.free-catholic.org Christ's Catholic Church]&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan="2"&gt;&amp;nbsp;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt;+&lt;/td&gt;
+      &lt;td class="diff-addedline"&gt;&lt;div&gt;** [http://ccfinc.org/ Missionary Diocese of Christ's Church Fellowship International] Bp. David Holdridge - Roswell, New Mexico affiliated with [http://www.free-catholic.org Christ's Catholic Church]&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan="2"&gt;&amp;nbsp;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt;+&lt;/td&gt;
+      &lt;td class="diff-addedline"&gt;&lt;div&gt;** [http://www.ofjcommunity.org/ Order of the Friends of Jeshua] Bp. Lee Allen Petersen and Bp. Linda Marie Nelson - Weatherford, Texas affiliated with [http://www.free-catholic.org Christ's Catholic Church]&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan="2"&gt;&amp;nbsp;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt;+&lt;/td&gt;
+      &lt;td class="diff-addedline"&gt;&lt;div&gt;** [http://www.shepherds-heart.org/ Order of the Shepherd&#x2019;s Heart] Bp. Brian Ernest Brown - Hollister, Missouri affiliated with [http://www.free-catholic.org Christ's Catholic Church]&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan="2"&gt;&amp;nbsp;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt;+&lt;/td&gt;
+      &lt;td class="diff-addedline"&gt;&lt;div&gt;** [http://servants-of-peace.org/"&amp;gt;Society of the Servants of the Prince of Peace] Bp. Karl Pruter - Highlandville, Missouri affiliated with [http://www.free-catholic.org Christ's Catholic Church]&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan="2"&gt;&amp;nbsp;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt;+&lt;/td&gt;
+      &lt;td class="diff-addedline"&gt;&lt;div&gt;** [http://www.whithorn.org/ Whithorn School of Theology] Seminary - Hollister, Missouri affiliated with [http://www.free-catholic.org Christ's Catholic Church]&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class="diff-marker"&gt; &lt;/td&gt;
+      &lt;td class="diff-context"&gt;&lt;div&gt;* [http://www.ourladyprovince.com Old Catholic Province of Our Lady of Angels] Californian non-profit corporation&lt;/div&gt;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt; &lt;/td&gt;
+      &lt;td class="diff-context"&gt;&lt;div&gt;* [http://www.ourladyprovince.com Old Catholic Province of Our Lady of Angels] Californian non-profit corporation&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class="diff-marker"&gt; &lt;/td&gt;
+      &lt;td class="diff-context"&gt;&lt;div&gt;** [http://www.ourladydiocese.com Old Catholic Diocese of Our Lady of Angeles] Old Catholic Province of Our Lady of the Angels&lt;/div&gt;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt; &lt;/td&gt;
+      &lt;td class="diff-context"&gt;&lt;div&gt;** [http://www.ourladydiocese.com Old Catholic Diocese of Our Lady of Angeles] Old Catholic Province of Our Lady of the Angels&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan="2" class="diff-lineno"&gt;Line 47:&lt;/td&gt;
+      &lt;td colspan="2" class="diff-lineno"&gt;Line 58:&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class="diff-marker"&gt; &lt;/td&gt;
+      &lt;td class="diff-context"&gt;&lt;div&gt;** [http://www.communitycatholicchurch.com/ourpresidingbishop.htm St. Anne&#x2019;s Parish]&lt;/div&gt;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt; &lt;/td&gt;
+      &lt;td class="diff-context"&gt;&lt;div&gt;** [http://www.communitycatholicchurch.com/ourpresidingbishop.htm St. Anne&#x2019;s Parish]&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class="diff-marker"&gt; &lt;/td&gt;
+      &lt;td class="diff-context"&gt;&lt;div&gt;** [http://www.saint-peters.us Saint Peters Free Catholic Church] (North Augusta, SC)&lt;/div&gt;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt; &lt;/td&gt;
+      &lt;td class="diff-context"&gt;&lt;div&gt;** [http://www.saint-peters.us Saint Peters Free Catholic Church] (North Augusta, SC)&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class="diff-marker"&gt;-&lt;/td&gt;
+      &lt;td class="diff-deletedline"&gt;&lt;div&gt;* [http://www.free-catholic.org/ Ecumenical Free Catholic Communion] &lt;/div&gt;&lt;/td&gt;
+      &lt;td colspan="2"&gt;&amp;nbsp;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class="diff-marker"&gt;-&lt;/td&gt;
+      &lt;td class="diff-deletedline"&gt;&lt;div&gt;** [http://www.shepherds-heart.org/ Diocese of the Shepherd's Heart] EFCC Diocese in Hollister Missouri, affiliated with the [http://www.free-catholic.org Ecumenical Free Catholic Communion]&lt;/div&gt;&lt;/td&gt;
+      &lt;td colspan="2"&gt;&amp;nbsp;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class="diff-marker"&gt; &lt;/td&gt;
+      &lt;td class="diff-context"&gt;&lt;div&gt;* [http://www.naoldcatholicchurch.com North American Old Catholic Church] ( cfr [http://www.ocvocations.com/index-9.html www.ocvocations.com]) - ''Based in DC, Nationally Structured Bishops Seneco, Wagner, Mence, Hooker, Londono, Steward. ''&lt;/div&gt;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt; &lt;/td&gt;
+      &lt;td class="diff-context"&gt;&lt;div&gt;* [http://www.naoldcatholicchurch.com North American Old Catholic Church] ( cfr [http://www.ocvocations.com/index-9.html www.ocvocations.com]) - ''Based in DC, Nationally Structured Bishops Seneco, Wagner, Mence, Hooker, Londono, Steward. ''&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class="diff-marker"&gt; &lt;/td&gt;
+      &lt;td class="diff-context"&gt;&lt;div&gt;** [http://mychaljudge.com St. Mychal Judge Old Catholic Church] Dallas, Texas&lt;/div&gt;&lt;/td&gt;
+      &lt;td class="diff-marker"&gt; &lt;/td&gt;
+      &lt;td class="diff-context"&gt;&lt;div&gt;** [http://mychaljudge.com St. Mychal Judge Old Catholic Church] Dallas, Texas&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    END
+    xml = <<-END
+    &lt;tr&gt;
+      &lt;td colspan=&quot;2&quot; class=&quot;diff-lineno&quot;&gt;Line 19:&lt;/td&gt;
+      &lt;td colspan=&quot;2&quot; class=&quot;diff-lineno&quot;&gt;Line 19:&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;| Label               =[[Decca Records|Decca]] &lt;/div&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;| Label               =[[Decca Records|Decca]] &lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;| Associated_acts     =[[Sandie Shaw]] &lt;/div&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;| Associated_acts     =[[Sandie Shaw]] &lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt;-&lt;/td&gt;
+      &lt;td class=&quot;diff-deletedline&quot;&gt;&lt;div&gt;
+    | URL                 =[http://www.chris-andrews.&lt;span class=&quot;diffchange&quot;&gt;de/ chris-andrews.de] (&lt;/span&gt;German&lt;span class=&quot;diffchange&quot;&gt;) &lt;/span&gt;
+      &lt;/div&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt;+&lt;/td&gt;
+      &lt;td class=&quot;diff-addedline&quot;&gt;&lt;div&gt;
+    | URL                 =[ http://www.chris-andrews.&lt;span class=&quot;diffchange&quot;&gt;net personal website and Management English and &lt;/span&gt;German&lt;span class=&quot;diffchange&quot;&gt;]&lt;/span&gt;
+      &lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan=&quot;2&quot;&gt;&amp;nbsp;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt;+&lt;/td&gt;
+      &lt;td class=&quot;diff-addedline&quot;&gt;&lt;div&gt;[http://www.chris-andrews.de/ chris-andrews.de] (German) &lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;| Notable_instruments = &lt;/div&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;| Notable_instruments = &lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;}}&lt;/div&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;}}&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan=&quot;2&quot; class=&quot;diff-lineno&quot;&gt;Line 60:&lt;/td&gt;
+      &lt;td colspan=&quot;2&quot; class=&quot;diff-lineno&quot;&gt;Line 60:&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;Today Andrews is still active in his career as a singer/songwriter, working primarily in mainland Europe as well as the United Kingdom.&lt;/div&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;Today Andrews is still active in his career as a singer/songwriter, working primarily in mainland Europe as well as the United Kingdom.&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt;-&lt;/td&gt;
+      &lt;td class=&quot;diff-deletedline&quot;&gt;&lt;div&gt;
+    Currently he has homes &lt;span class=&quot;diffchange&quot;&gt;both &lt;/span&gt;in [[&lt;span class=&quot;diffchange&quot;&gt;London&lt;/span&gt;]] and [[&lt;span class=&quot;diffchange&quot;&gt;Selm&lt;/span&gt;]].
+      &lt;/div&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt;+&lt;/td&gt;
+      &lt;td class=&quot;diff-addedline&quot;&gt;&lt;div&gt;
+    Currently he has homes in [[&lt;span class=&quot;diffchange&quot;&gt;Spain&lt;/span&gt;]] and [[&lt;span class=&quot;diffchange&quot;&gt;Germany&lt;/span&gt;]].
+      &lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;==Songwriting credits==&lt;/div&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;==Songwriting credits==&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan=&quot;2&quot; class=&quot;diff-lineno&quot;&gt;Line 88:&lt;/td&gt;
+      &lt;td colspan=&quot;2&quot; class=&quot;diff-lineno&quot;&gt;Line 88:&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;==See also==&lt;/div&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;==See also==&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan=&quot;2&quot;&gt;&amp;nbsp;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt;+&lt;/td&gt;
+      &lt;td class=&quot;diff-addedline&quot;&gt;&lt;div&gt;*[[ www.chris-andrews.net - discografie ]]&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;*[[List of artists under the Decca Records label]]&lt;/div&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;*[[List of artists under the Decca Records label]]&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;*[[Number 1 Singles in Ireland 1965]]&lt;/div&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;*[[Number 1 Singles in Ireland 1965]]&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan=&quot;2&quot; class=&quot;diff-lineno&quot;&gt;Line 99:&lt;/td&gt;
+      &lt;td colspan=&quot;2&quot; class=&quot;diff-lineno&quot;&gt;Line 100:&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;==External links==&lt;/div&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;==External links==&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt;-&lt;/td&gt;
+      &lt;td class=&quot;diff-deletedline&quot;&gt;&lt;div&gt;
+    *[http://www.chris-andrews.&lt;span class=&quot;diffchange&quot;&gt;de&lt;/span&gt;/ Chris Andrews website &lt;span class=&quot;diffchange&quot;&gt;(in &lt;/span&gt;[[&lt;span class=&quot;diffchange&quot;&gt;German language|&lt;/span&gt;German)]]]
+      &lt;/div&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt;+&lt;/td&gt;
+      &lt;td class=&quot;diff-addedline&quot;&gt;&lt;div&gt;
+    *[http://www.chris-andrews.&lt;span class=&quot;diffchange&quot;&gt;net &lt;/span&gt;/ Chris Andrews &lt;span class=&quot;diffchange&quot;&gt;personal &lt;/span&gt;website &lt;span class=&quot;diffchange&quot;&gt;and Management A.Andrews &lt;/span&gt;[[&lt;span class=&quot;diffchange&quot;&gt;in English and &lt;/span&gt;German)]]]
+      &lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan=&quot;2&quot;&gt;&amp;nbsp;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt;+&lt;/td&gt;
+      &lt;td class=&quot;diff-addedline&quot;&gt;&lt;div&gt;*[http://www.chris-andrews.de]&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;*{{discogs artist|artist=Chris+Andrews+(3)|name=Chris Andrews}}&lt;/div&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;*{{discogs artist|artist=Chris+Andrews+(3)|name=Chris Andrews}}&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;*[{{Allmusic|class=artist|id=p533441/biography|pure_url=yes}} Chris Andrews biography at the [[Allmusic]] [[website]]]&lt;/div&gt;&lt;/td&gt;
+      &lt;td class=&quot;diff-marker&quot;&gt; &lt;/td&gt;
+      &lt;td class=&quot;diff-context&quot;&gt;&lt;div&gt;*[{{Allmusic|class=artist|id=p533441/biography|pure_url=yes}} Chris Andrews biography at the [[Allmusic]] [[website]]]&lt;/div&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;!-- diff cache key enwiki:diff:version:1.11a:oldid:405782067:newid:410381700 --&gt;
+    
+    END
+    res = @bot.find_links(xml)
+    assert_equal([["http://www.chris-andrews.de/", "chris-andrews.de"],
+     ["http://www.chris-andrews",
+      ".<span class=\"diffchange\">net </span>/ Chris Andrews <span class=\"diffchange\">personal </span>website <span class=\"diffchange\">and Management A.Andrews </span>[[<span class=\"diffchange\">in English and </span>German)"],
+     ["http://www.chris-andrews.de", ""]], res)
   end
   
 end

@@ -48,7 +48,7 @@ class EnWikiBot < Bot #TODO db.close
     @db_queue = Queue.new
     #puts 'initial memory location: ' + @db_queue.to_s
     start_db_worker()
-    
+    start_db_watcher()
     #Thread.abort_on_exception = true #set this so that if there's an exception on any of these threads, everything quits - good for initial debugging
     #@detectives = [RevisionDetective, AuthorDetective, ExternalLinkDetective, PageDetective]
     @detectives = [ExternalLinkDetective]
@@ -59,17 +59,35 @@ class EnWikiBot < Bot #TODO db.close
     super(bot_name)
   end
   
+  def start_db_watcher()
+    @workers.dispatch do
+      sleep(60) #wait for a minute for everything to set up
+      prev = 0
+      loop do
+        curr = @db_queue.size
+        if (curr - prev) > 100
+          @error.error("SOMETHINGS WRONG! Queue size: #{curr}")
+          #fork off a new thread to restart?
+          #exit(1) #kill this one
+        end
+        prev = curr
+      end
+    end
+  end
+  
   def start_db_worker()
     db = db_open(@name)
     @workers.dispatch do
       loop do #keep this thread running forever
         #this works because even if we turn off working, we'll have stuff queued and we'll loop in the inner loop until the queue is cleared
         until @db_queue.empty? do
+          done = false
           begin
             sql, key = @db_queue.pop()
             sql_cleaned = sql.gsub(/\x00/, '')#take out nul characters; don't write them to db
             statement = db.prepare(sql_cleaned)
             statement.execute!
+            done = true
             #db_log is NOT threadsafe! that stuff write at different times to the file!
             #@db_log.info sql[11..20].strip if key == nil #log 20 characters (baseically table) if there's no key(ie from detectives)
             #@db_log_main.info sql[11..20].strip unless key == nil
@@ -77,23 +95,11 @@ class EnWikiBot < Bot #TODO db.close
           rescue SQLite3::SQLException, Exception => e
             @db_log.error sql
             @db_log.error e
-            begin
-              require 'net/smtp'
-
-              Net::SMTP.start('localhost') do |smtp|
-                smtp.send_message(
-                  "Something's gone wrong with our project! This is an automated message, but check db.log. #{Time.now.to_s}", 
-                  'senior_design@retrodict.com', 
-                  ['me@retrodict.com', 'brittney.exline@gmail.com', 'aagrawal@wharton.upenn.edu']
-                )
-              end
-            rescue Errno::ECONNREFUSED
-              #we couldn't connect
-            end
             #@db_log.error e.backtrace
             #puts 'Exception: ' + e.to_s
             #puts e.backtrace
-          #ensure
+          ensure
+            send_email('sql exception') unless done
             #puts 'done writing'
           end
         end
@@ -118,7 +124,7 @@ class EnWikiBot < Bot #TODO db.close
             data = get_diff_data(info[2])
             links = find_links(data.first)
             unless links.empty?
-              @irc_log.info("following: #{links.size.to_s}; #{info[0]}")
+              @irc_log.info("following #{links.size.to_s} links; db queue: #{@db_queue.size.to_s}; #{info[0]}")
               @detectives.each do |clazz|
                 clues = info + data + [links] #this should return copies of each of this, we don't want to pass around the original objects on different threads
                 
@@ -244,13 +250,31 @@ class EnWikiBot < Bot #TODO db.close
       #exp.set_backtrace(e.backtrace.select{|i| i =~ /_detective/ })
       #raise exp
     ensure
-      @error.error('ERROR at investigate with ' + message) unless done
+      unless done
+        @error.error("ERROR at investigate with #{clues[0]} #{clues.last.collect{|o| o.first }.join(', ')}") 
+      end
     end
   end
 
   def should_store? message
     #keep messages that match our format...eventually this will be limited to certain messages, should we spin out a thread per message?
     message =~ /\00314\[\[\00307(.*)\00314\]\]\0034\ (.*)\00310\ \00302(.*)\003\ \0035\*\003\ \00303(.*)\003\ \0035\*\003\ \((.*)\)\ \00310(.*)\003/ #TODO this is silly, we should only scan this once...below, probably
+  end
+  
+  def send_email additional_info
+    begin
+      require 'net/smtp'
+
+      Net::SMTP.start('localhost') do |smtp|
+        smtp.send_message(
+          "Something's gone wrong with our project! \n\n #{additional_info} \n\n This is an automated message, but check some of the logs. #{Time.now.to_s}", 
+          'senior_design@retrodict.com', 
+          ['me@retrodict.com', 'brittney.exline@gmail.com', 'aagrawal@wharton.upenn.edu']
+        )
+      end
+    rescue Errno::ECONNREFUSED
+      #we couldn't connect
+    end
   end
   
   #fields in the return:
