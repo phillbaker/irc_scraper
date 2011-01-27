@@ -67,6 +67,7 @@ class EnWikiBot < Bot #TODO db.close
         curr = @db_queue.size
         if (curr - prev) > 100
           @error.error("SOMETHINGS WRONG! Queue size: #{curr}")
+          send_email("Queue size: #{curr}")
           #fork off a new thread to restart?
           #exit(1) #kill this one
         end
