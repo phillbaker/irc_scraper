@@ -106,8 +106,7 @@ class EnWikiBot < Bot #TODO db.close
               clues = info + data + [links] #this should return copies of each of this, we don't want to pass around the original objects on different threads
               @workers.dispatch do #on another thread
                 #let's be careful passing around objects here, we need to make sure that if we modifying them on different threads, that's okay...
-      	        #start_detective(clues,clazz,message)
-      	        p clues
+      	        start_detective(clues,clazz,message)
               end #end detective dispatch
             end #end of detectives.each
           end #end of unless
@@ -208,13 +207,12 @@ class EnWikiBot < Bot #TODO db.close
   # 10: array of array of links found in [url, desc] format, description may be nil if it was not a wikilink
   def start_detective(clues, clazz, message)
     detective = clazz.new(@db_queue)
-    #mandatory wait period before investigating to allow wikipedia changes to propagate: 10s?
+    #mandatory wait period before investigating to allow wikipedia changes to propagate: => time we kill hitting wikipedia for external link stuff
     begin
       detective.investigate(clues)
     rescue Exception => e
       str = "EXCEPTION: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.find{|i| i =~ /_detective|mediawiki/} } with #{message}"
       @error.error str
-      #Thread.current.kill
       exp = Exception.new(str)
       exp.set_backtrace(e.backtrace.select{|i| i =~ /_detective/ })
       raise exp
