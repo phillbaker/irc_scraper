@@ -43,15 +43,7 @@ SQL
   end
 
   #info is a list: 
-  # 0: sample_id (string), 
-  # 1: article_name (string), 
-  # 2: desc (string), 
-  # 3: rev_id (string),
-  # 4: old_id (string)
-  # 5: user (string), 
-  # 6: byte_diff (int), 
-  # 7: timestamp (Time object), 
-  # 8: description (string)
+  # see notes before start_detective in enwiki_bot
   def investigate info
     #TODO if we already have data for a user, should we look it up?
     
@@ -133,7 +125,7 @@ SQL
     editcount = 0
     if(rxml['registration'] != nil)
       create = Time.parse(rxml['registration'])
-      life = info[7] - create
+      life = info[7] - create #TODO all of these timestamps need to be changed to reflect the newer info structure
       create = create.to_i
       life = life.to_i
     end

@@ -3,6 +3,7 @@ require 'net/http'
 require 'rubygems'
 require 'xmlsimple'
 
+#TODO log calls to the API to look at how effective(or not) we are
 #TODO put in module
 #TODO should be done like https://github.com/pauldix/typhoeus/blob/master/examples/twitter.rb ?
 # So once we manage our threads, we can make this faster, either https://github.com/pauldix/typhoeus or http://curb.rubyforge.org/ or http://curl-multi.rubyforge.org/

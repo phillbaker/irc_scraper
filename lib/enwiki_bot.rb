@@ -28,8 +28,8 @@ class EnWikiBot < Bot #TODO db.close
     @table_name = server.gsub(/\./, '_') + '_' + channel.gsub(/\./, '_') #TODO this isn't really sanitized...use URI.parse
     @error = Logger.new('log/bot.log') 
     @db_log = Logger.new('log/db.log')
-    @db_log_main = Logger.new('log/db_main.log')
-    @db_log_link = Logger.new('log/link.log')
+    #@db_log_main = Logger.new('log/db_main.log')
+    #@db_log_link = Logger.new('log/link.log')
     @irc_log = Logger.new('log/feed.log')
     if db
       @db = db
@@ -65,22 +65,23 @@ class EnWikiBot < Bot #TODO db.close
       loop do #keep this thread running forever
         #this works because even if we turn off working, we'll have stuff queued and we'll loop in the inner loop until the queue is cleared
         until @db_queue.empty? do
-          #begin
+          begin
             sql, key = @db_queue.pop()
             statement = db.prepare(sql)
             statement.execute!
             #db_log is NOT threadsafe! that stuff write at different times to the file!
             #@db_log.info sql[11..20].strip if key == nil #log 20 characters (baseically table) if there's no key(ie from detectives)
             #@db_log_main.info sql[11..20].strip unless key == nil
-            #@db_log_link.info "insert length = #{sql.length}; queue length = #{@db_queue.size}" if key == nil && sql[11..20] =~ /link/
-          #rescue Exception => e
-          #  @db_log.info e
-          #  @db_log.info e.backtrace
+            @db_log.info "insert length = #{sql.length}; queue length = #{@db_queue.size}" if key == nil && sql[11..20] =~ /link/
+          rescue Exception => e
+            @db_log.info sql
+            @db_log.info e
+            @db_log.info e.backtrace
             #puts 'Exception: ' + e.to_s
             #puts e.backtrace
           #ensure
             #puts 'done writing'
-          #end
+          end
         end
       end
       #db.close unless db.closed?
@@ -90,7 +91,7 @@ class EnWikiBot < Bot #TODO db.close
   def hear(message)
     if should_store?(message)
       info, size = store!(message)
-      @irc_log.info("#{size} - #{message[0..100]}")
+      #@irc_log.info("#{size} - #{message[0..100]}")
       #puts 'stored'
       #call our methods in other threads: Process.fork (=> actual system independent processes) or Thread.new = in ruby vm psuedo threads?
       ## so should the detective classes be static, so there's no chance of trying to access shared resources at the same time?
@@ -102,6 +103,7 @@ class EnWikiBot < Bot #TODO db.close
           links = find_links(data.first)
           
           unless links.empty?
+            @irc_log.info('following: ' + links.size.to_s)
             @detectives.each do |clazz|
               clues = info + data + [links] #this should return copies of each of this, we don't want to pass around the original objects on different threads
               @workers.dispatch do #on another thread
@@ -109,8 +111,12 @@ class EnWikiBot < Bot #TODO db.close
       	        start_detective(clues,clazz,message)
               end #end detective dispatch
             end #end of detectives.each
+          else
+            @irc_log.info('not following; no links')
           end #end of unless
         end #end of following dispatch
+      else
+        @irc_log.info('not following; wrong namespace ')
       end #end of if follow
     end #end of should_store?
   end
@@ -188,7 +194,6 @@ class EnWikiBot < Bot #TODO db.close
   
   #look at title, exclude titles starting with: User talk, Talk, Wikipedia, User, etc.
   def should_follow? info 
-    @irc_log.info('not following: ' + info[1])
     bad_beg_regex = /^(Talk:|User:|User\stalk:|Wikipedia:|Wikipedia\stalk:|File\stalk:|MediaWiki:|MediaWiki\stalk:|Template\stalk:|Help:|Help\stalk:|Category\stalk:|Thread:|Thread\stalk:|Summary\stalk:|Portal\stalk:|Book\stalk:|Special:|Media:)/
     !(info[1] =~ bad_beg_regex)
   end
@@ -225,14 +230,13 @@ class EnWikiBot < Bot #TODO db.close
   end
   
   #fields in the return:
-  # 0: sample_id (string), 
-  # 1: article_name (string), 
-  # 2: desc (string), 
-  # 3: rev_id (string),
-  # 4: old_id (string)
-  # 5: user (string), 
-  # 6: byte_diff (int), 
-  # 7: description (string)
+  # 0: article_name (string), 
+  # 1: desc (string), 
+  # 2: rev_id (string),
+  # 3: old_id (string)
+  # 4: user (string), 
+  # 5: byte_diff (int), 
+  # 6: description (string)
   def store! message
     fields = []
     fields = process_irc(message)
@@ -243,7 +247,7 @@ class EnWikiBot < Bot #TODO db.close
     fields[3] = fields[3].to_i
     fields[5] = fields[5].to_i
     
-    size = db_queue [fields[0], fields[1], fields[2], fields[3], fields[4], fields[5], fields[6]]
+    size = db_queue(fields)
     
     #return the info used to create this so we can just pass them in code instead of querying the db
     [fields, size]

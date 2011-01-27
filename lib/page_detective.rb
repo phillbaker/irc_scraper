@@ -29,15 +29,7 @@ SQL
   end
 
   #info is a list: 
-  # 0: sample_id (string), 
-  # 1: article_name (string), 
-  # 2: desc (string), 
-  # 3: rev_id (string),
-  # 4: old_id (string)
-  # 5: user (string), 
-  # 6: byte_diff (int), 
-  # 7: timestamp (Time object), 
-  # 8: description (string)
+  # see notes before start_detective in enwiki_bot
   def investigate info
     page = find_page_history(info)
     db_write!(

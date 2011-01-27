@@ -52,7 +52,7 @@ class Detective
   
   #columns should be a list of strings of the names of the columns that data will be inserted into
   #data should be a list of the data, in the same order as the named columns in columns
-  def db_write! columns, data
+  def db_queue columns, data
     column_sql = columns.join(', ')
     #wrap string data types in single quotes, otherwise let it be (ie Numeric should stay numeric)
     data_quoted = data.collect do |o|
@@ -67,8 +67,8 @@ class Detective
     end
     data_sql = data_quoted.join(', ')
     sql = %{INSERT INTO %s ( %s ) VALUES ( %s ) } % [self.class.table_name(), column_sql, data_sql]
+    #puts 'queued from detective to ' + @db_queue.size.to_s #@db_queue.to_s
     @db_queue << [sql]
     true
-    #puts 'queued from detective to ' + @db_queue.size.to_s #@db_queue.to_s
   end
 end

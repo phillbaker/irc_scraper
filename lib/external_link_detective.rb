@@ -18,7 +18,6 @@ class ExternalLinkDetective < Detective
       <<-SQL
       id integer primary key autoincrement,
       revision_id integer,                              
-      http_response text,
       link text,
       source text,
       description text,
@@ -35,20 +34,20 @@ SQL
     results = []
     linkarray.each do |arr|
       #puts arr.first
-      source, success = find_source(arr.first)
-      #puts find_source(arr.first)[0..100]
-      results << {:link => arr.first, :source => source, :http_response => success, :description => arr.last}
+      source_content_error = find_source(arr.first)
+      results << {:link => arr.first, :source => source_content_error, :description => arr.last}
     end
-    
+
     results.each do |linkentry|
-      db_write!(
-        ['revision_id', 'link', 'source', 'response', 'description'],
-	      [info[2], linkentry[:link], linkentry[:source], linkentry[:http_response], linkentry[:description]]
+      db_queue(
+        ['revision_id', 'link', 'source', 'description'],
+	      [info[2], linkentry[:link], linkentry[:source], linkentry[:description]]
 	    )
     end	
-    true
+    true # :)
   end	
   
+  #return either the source, a non text/html contenttype or the httperror class, all as strings
   def find_source(url)
     #TODO do a check for the size and type-content of it before we pull it
     #binary files we probably don't need to grab and things larger than a certain size we don't want to grab
@@ -63,18 +62,14 @@ SQL
       resp = e
     end
     
-    ret = []
+    ret = ''
     if(resp.is_a? Net::HTTPOK or resp.is_a? Net::HTTPFound)
-      if resp.content_type == 'text/html'
-        #puts resp.body.length
-        ret << resp.body[0..10**5] #truncate at 100K characters; not a good way to deal with size, should check the headers only
-      else
-        ret << resp.content_type
-      end
-      ret << true
+      #truncate at 100K characters; not a good way to deal with size, should check the headers only
+      #else set the body to the content type
+      ret = (resp.content_type == 'text/html') ? resp.body[0..10**5] : resp.content_type
     else #TODO follow redirects!
-      ret << resp.class.to_s
-      ret << false
+      #if it's a bad http response set the body equal to that response
+      ret = resp.class.to_s
     end
     ret
   end
