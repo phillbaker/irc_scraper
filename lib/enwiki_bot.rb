@@ -67,7 +67,8 @@ class EnWikiBot < Bot #TODO db.close
         until @db_queue.empty? do
           begin
             sql, key = @db_queue.pop()
-            statement = db.prepare(sql)
+            sql_cleaned = sql.gsub(/\x00/, '')#take out nul characters; don't write them to db
+            statement = db.prepare(sql_cleaned)
             statement.execute!
             #db_log is NOT threadsafe! that stuff write at different times to the file!
             #@db_log.info sql[11..20].strip if key == nil #log 20 characters (baseically table) if there's no key(ie from detectives)
@@ -83,7 +84,7 @@ class EnWikiBot < Bot #TODO db.close
                 smtp.send_message(
                   "Something's gone wrong with our project! This is an automated message, but check db.log. #{Time.now.to_s}", 
                   'senior_design@retrodict.com', 
-                  ['me@retrodict.com', 'brittney.exline@gmail.com', '']
+                  ['me@retrodict.com', 'brittney.exline@gmail.com', 'aagrawal@wharton.upenn.edu']
                 )
               end
             rescue Errno::ECONNREFUSED
@@ -112,21 +113,27 @@ class EnWikiBot < Bot #TODO db.close
       if should_follow?(info[0])
         #do the rest of this on threads - it could be slow, don't block
         @workers.dispatch do
-          data = get_diff_data(info[2])
-          links = find_links(data.first)
-          
-          unless links.empty?
-            @irc_log.info("following: #{links.size.to_s}; #{info[0]}")
-            @detectives.each do |clazz|
-              clues = info + data + [links] #this should return copies of each of this, we don't want to pass around the original objects on different threads
-              @workers.dispatch do #on another thread
-                #let's be careful passing around objects here, we need to make sure that if we modifying them on different threads, that's okay...
-      	        start_detective(clues,clazz,message)
-              end #end detective dispatch
-            end #end of detectives.each
-          else
-            @irc_log.info('not following: no links')
-          end #end of unless
+          done = false
+          begin
+            data = get_diff_data(info[2])
+            links = find_links(data.first)
+            unless links.empty?
+              @irc_log.info("following: #{links.size.to_s}; #{info[0]}")
+              @detectives.each do |clazz|
+                clues = info + data + [links] #this should return copies of each of this, we don't want to pass around the original objects on different threads
+                
+                @workers.dispatch do #on another thread
+                  #let's be careful passing around objects here, we need to make sure that if we modifying them on different threads, that's okay...
+        	        start_detective(clues,clazz,message)
+                end #end detective dispatch
+              end #end of detectives.each
+            else
+              @irc_log.info('not following: no links ' + info[0])
+            end #end of unless
+            done = true
+          ensure
+            @irc_log.error('broken!: ' + info[0] + ' ' + info[2]) unless done
+          end #end of error handling block
         end #end of following dispatch
       else
         @irc_log.info('not following: wrong namespace ')
@@ -226,14 +233,18 @@ class EnWikiBot < Bot #TODO db.close
   def start_detective(clues, clazz, message)
     detective = clazz.new(@db_queue)
     #mandatory wait period before investigating to allow wikipedia changes to propagate: => time we kill hitting wikipedia for external link stuff
+    done = false
     begin
       detective.investigate(clues)
+      done = true
     rescue Exception => e
       str = "EXCEPTION: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.find{|i| i =~ /_detective|mediawiki/} } with #{message}"
-      @error.error str
-      exp = Exception.new(str)
-      exp.set_backtrace(e.backtrace.select{|i| i =~ /_detective/ })
-      raise exp
+      @error.error(str)
+      #exp = Exception.new(str)
+      #exp.set_backtrace(e.backtrace.select{|i| i =~ /_detective/ })
+      #raise exp
+    ensure
+      @error.error('ERROR at investigate with ' + message) unless done
     end
   end
 

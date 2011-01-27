@@ -41,11 +41,15 @@ class IRCClient
           close
           exit(1)
         elsif message =~ /PRIVMSG #{@channel} :(.*)$/
+          done = false
           begin
             @bot.hear $1
+            done = true
           rescue Exception
             log message
             log $!.to_s + $@.to_s #This also just logs all the exceptions thrown in dealing with stuff...
+          ensure
+            log 'ERROR at :' + message unless done
           end
         else
           log message
