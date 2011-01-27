@@ -11,7 +11,6 @@ TABLE_SCHEMA_SUFFIX = <<-SQL
       old_id integer,
       user varchar(64),
       byte_diff integer,
-      ts timestamp(20),
       description text,
       created DATE DEFAULT (datetime('now','localtime'))
     )
