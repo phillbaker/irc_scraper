@@ -37,8 +37,14 @@ SQL
       #puts arr.first
       source_content_error, headers = find_source(arr.first)
       headers_str = Marshal.dump(headers)
-      #ignore 
-      results << {:link => arr.first, :source => headers['Content-encoding'] == 'gzip' ? 'gzip' : source_content_error, :description => arr.last, :headers => headers_str}
+      #ignore binary stuff for now
+      
+      results << { 
+        :link => arr.first, 
+        :source => ['gzip', 'deflate', 'compress'].include?(headers['Content-encoding']) ? 'encoded' : source_content_error, 
+        :description => arr.last, 
+        :headers => headers_str
+      }
     end
 
     results.each do |linkentry|
