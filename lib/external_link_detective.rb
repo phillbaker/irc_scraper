@@ -38,7 +38,7 @@ SQL
       source_content_error, headers = find_source(arr.first)
       headers_str = Marshal.dump(headers)
       #ignore binary stuff for now
-      encoded = ['gzip', 'deflate', 'compress'].include?(headers[:'content-encoding'].first)
+      encoded = headers[:'content-encoding'] ? ['gzip', 'deflate', 'compress'].include?(headers[:'content-encoding'].first) : false
       
       results << { 
         :link => arr.first, 

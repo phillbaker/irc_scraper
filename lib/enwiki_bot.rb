@@ -251,7 +251,7 @@ class EnWikiBot < Bot #TODO db.close
       #raise exp
     ensure
       unless done
-        @error.error("ERROR at investigate with #{clues[0]} #{clues.last.collect{|o| o.first }.join(', ')}") 
+        @error.error("ERROR at investigate with #{clues[0]} (#{clues[2]}) #{clues.last.collect{|o| o.first }.join(', ')}") 
       end
     end
   end

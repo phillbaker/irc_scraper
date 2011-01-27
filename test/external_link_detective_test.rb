@@ -45,7 +45,7 @@ class ExternalLinkDetectiveTest < Test::Unit::TestCase
       ]
     ])
     
-    assert_equal([["INSERT INTO link ( revision_id, link, source, description ) VALUES ( 410276420, 'https://www.cia.gov/library/publications/the-world-factbook/geos/cg.html', 'Net::HTTPMovedPermanently', 'CIA - The World Factbook - Congo, Democratic Republic of the<!-- Bot generated title -->' ) "]], @queue)
+    assert_equal([["INSERT INTO link ( revision_id, link, source, description, headers ) VALUES ( 410276420, 'https://www.cia.gov/library/publications/the-world-factbook/geos/cg.html', 'Net::HTTPMovedPermanently', 'CIA - The World Factbook - Congo, Democratic Republic of the<!-- Bot generated title -->', '\004\b{\006:\rlocation[\006\"3https://www.cia.gov/redirects/ciaredirect.html' ) "]], @queue)
   end
   
   def test_setup_table
@@ -57,18 +57,23 @@ class ExternalLinkDetectiveTest < Test::Unit::TestCase
   
   def test_find_source
     source = @detective.find_source('http://example.com/')
-    known_source = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\r\n<HTML>\r\n<HEAD>\r\n  <META http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n  <TITLE>Example Web Page</TITLE>\r\n</HEAD> \r\n<body>  \r\n<p>You have reached this web page by typing &quot;example.com&quot;,\r\n&quot;example.net&quot;,&quot;example.org&quot\r\n  or &quot;example.edu&quot; into your web browser.</p>\r\n<p>These domain names are reserved for use in documentation and are not available \r\n  for registration. See <a href=\"http://www.rfc-editor.org/rfc/rfc2606.txt\">RFC \r\n  2606</a>, Section 3.</p>\r\n</BODY>\r\n</HTML>\r\n\r\n"
-    assert_equal(known_source, source)
-    
-    source = @detective.find_source('http://example.com')
-    known_source = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\r\n<HTML>\r\n<HEAD>\r\n  <META http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n  <TITLE>Example Web Page</TITLE>\r\n</HEAD> \r\n<body>  \r\n<p>You have reached this web page by typing &quot;example.com&quot;,\r\n&quot;example.net&quot;,&quot;example.org&quot\r\n  or &quot;example.edu&quot; into your web browser.</p>\r\n<p>These domain names are reserved for use in documentation and are not available \r\n  for registration. See <a href=\"http://www.rfc-editor.org/rfc/rfc2606.txt\">RFC \r\n  2606</a>, Section 3.</p>\r\n</BODY>\r\n</HTML>\r\n\r\n"
-    assert_equal(known_source, source)
+    known_source = ["<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\r\n<HTML>\r\n<HEAD>\r\n  <META http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n  <TITLE>Example Web Page</TITLE>\r\n</HEAD> \r\n<body>  \r\n<p>You have reached this web page by typing &quot;example.com&quot;,\r\n&quot;example.net&quot;,&quot;example.org&quot\r\n  or &quot;example.edu&quot; into your web browser.</p>\r\n<p>These domain names are reserved for use in documentation and are not available \r\n  for registration. See <a href=\"http://www.rfc-editor.org/rfc/rfc2606.txt\">RFC \r\n  2606</a>, Section 3.</p>\r\n</BODY>\r\n</HTML>\r\n\r\n",
+     {:date=>["Thu, 27 Jan 2011 18:17:22 GMT"],
+      :connection=>["close"],
+      :"accept-ranges"=>["bytes"],
+      :"content-type"=>["text/html; charset=UTF-8"],
+      :etag=>["\"573c1-254-48c9c87349680\""],
+      :"content-length"=>["596"],
+      :age=>["769"],
+      :server=>["Apache"],
+      :"last-modified"=>["Fri, 30 Jul 2010 15:30:18 GMT"]}]
+    assert_equal(known_source.first, source.first) #test source
     
     source = @detective.find_source('http://example.com/asdfasdf')
-    assert_equal('Net::HTTPNotFound', source)
+    assert_equal('Net::HTTPNotFound', source.first) #test source
     
     source = @detective.find_source('http://pqualsdkjfladf.com/asdfasdf') #non-existent url
-    assert_equal('SocketError', source)
+    assert_equal('SocketError', source.first)
   end
   
   def test_okay_with_gzip
@@ -80,11 +85,18 @@ class ExternalLinkDetectiveTest < Test::Unit::TestCase
     end
   end
   
+  def test_binary_file
+    #http://tennisbc.org/files/pospisil.pdf
+    assert_nothing_raised do
+      res = @detective.investigate([[nil] * 10, [['http://tennisbc.org/files/pospisil.pdf', '']]])
+    end
+  end
+  
   def test_uncaught_errors
     #410371611
     #410394508
     
-    assert_nothing_raised 
+    assert_nothing_raised do
       #with a down url
       @detective.investigate([[nil, nil, 410395683], [nil] * 7, [['http://www.bomis.com/about/bomis_faq.html', '']]])
     end
