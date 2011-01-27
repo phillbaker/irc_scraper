@@ -42,6 +42,7 @@ class EnWikiBot < Bot #TODO db.close
       db_create_schema!(@table_name)
     end
     @name = bot_name
+    @update = Time.now.to_i
     
     #https://github.com/danielbush/ThreadPool for info on the threadpool
     @workers = ThreadPooling::ThreadPool.new(250) #base this on a rough guesstimate of how many seconds of work we get per second
@@ -110,6 +111,10 @@ class EnWikiBot < Bot #TODO db.close
   end
   
   def hear(message)
+    if(((curr = Time.now.to_i) - @update) > 60) #time in seconds
+      @error.error("STARVING")
+    end
+    @update = curr
     if should_store?(message)
       info, size = store!(message)
       #@irc_log.info("#{size} - #{message[0..100]}")
