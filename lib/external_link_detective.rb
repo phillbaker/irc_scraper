@@ -37,7 +37,7 @@ SQL
       #puts arr.first
       source, success = find_source(arr.first)
       #puts find_source(arr.first)[0..100]
-      ret << {:link => arr.first, :source => source, :http_response => success, :description => arr.last}
+      results << {:link => arr.first, :source => source, :http_response => success, :description => arr.last}
     end
     
     results.each do |linkentry|

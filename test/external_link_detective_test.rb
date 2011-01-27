@@ -21,19 +21,32 @@ class ExternalLinkDetectiveTest < Test::Unit::TestCase
     @detective = @clazz.new(@queue)
   end
   
-  # def test_investigate
-  #   @clazz.setup_table(@db)
-  #   res = @detective.investigate([2,
-  #     'Vladimir Guerrero',
-  #     'M',
-  #     '392473934',
-  #     '392337290',
-  #     'Briskbaby',
-  #     '+290',
-  #     "fixes, added persondata, typos fixed: august 24 \342\206\222 August 24 using [[Project:AWB|AWB]]"
-  #   ])
-  #   assert_equal(true, res)
-  # end
+  def test_investigate
+    @clazz.setup_table(@db)
+    #old info:
+    # [2,
+    #   'Vladimir Guerrero',
+    #   'M',
+    #   '392473934',
+    #   '392337290',
+    #   'Briskbaby',
+    #   '+290',
+    #   "fixes, added persondata, typos fixed: august 24 \342\206\222 August 24 using [[Project:AWB|AWB]]"
+    # ]
+    res = @detective.investigate([
+      "Islam in the Democratic Republic of the Congo", 
+      "", 410276420, 395536324, "Anna Frodesiak", 12, 
+      "link ivory trade", 
+      "&lt;tr&gt;\n  &lt;td colspan=\"2\" class=\"diff-lineno\"&gt;Line 1:&lt;/td&gt;\n  &lt;td colspan=\"2\" class=\"diff-lineno\"&gt;Line 1:&lt;/td&gt;\n&lt;/tr&gt;\n&lt;tr&gt;\n  &lt;td class=\"diff-marker\"&gt; &lt;/td&gt;\n  &lt;td class=\"diff-context\"&gt;&lt;div&gt;{{islam by country}}&lt;/div&gt;&lt;/td&gt;\n  &lt;td class=\"diff-marker\"&gt; &lt;/td&gt;\n  &lt;td class=\"diff-context\"&gt;&lt;div&gt;{{islam by country}}&lt;/div&gt;&lt;/td&gt;\n&lt;/tr&gt;\n&lt;tr&gt;\n  &lt;td class=\"diff-marker\"&gt;-&lt;/td&gt;\n  &lt;td class=\"diff-deletedline\"&gt;&lt;div&gt;\n'''[[Islam]] in the [[Democratic Republic of the Congo]]''' is not a recent phenomenon, as it has been present within the area since the 18th century, when [[Arab]] traders from [[East Africa]] pushed into the interior for [[ivory]] and [[slave]] trading purposes. Today, Muslims constitute approximately 10.4% of the Congolese population.&amp;lt;ref&amp;gt;[https://www.cia.gov/library/publications/the-world-factbook/geos/cg.html CIA - The World Factbook - Congo, Democratic Republic of the&amp;lt;!-- Bot generated title --&amp;gt;]&amp;lt;/ref&amp;gt;&amp;lt;ref&amp;gt;[http://www.state.gov/r/pa/ei/bgn/2823.htm Congo (Kinshasa) (01/08)&amp;lt;!-- Bot generated title --&amp;gt;]&amp;lt;/ref&amp;gt;\n  &lt;/div&gt;&lt;/td&gt;\n  &lt;td class=\"diff-marker\"&gt;+&lt;/td&gt;\n  &lt;td class=\"diff-addedline\"&gt;&lt;div&gt;\n'''[[Islam]] in the [[Democratic Republic of the Congo]]''' is not a recent phenomenon, as it has been present within the area since the 18th century, when [[Arab]] traders from [[East Africa]] pushed into the interior for [[&lt;span class=\"diffchange\"&gt;ivory trade|&lt;/span&gt;ivory]] and [[slave]] trading purposes. Today, Muslims constitute approximately 10.4% of the Congolese population.&amp;lt;ref&amp;gt;[https://www.cia.gov/library/publications/the-world-factbook/geos/cg.html CIA - The World Factbook - Congo, Democratic Republic of the&amp;lt;!-- Bot generated title --&amp;gt;]&amp;lt;/ref&amp;gt;&amp;lt;ref&amp;gt;[http://www.state.gov/r/pa/ei/bgn/2823.htm Congo (Kinshasa) (01/08)&amp;lt;!-- Bot generated title --&amp;gt;]&amp;lt;/ref&amp;gt;\n  &lt;/div&gt;&lt;/td&gt;\n&lt;/tr&gt;\n&lt;tr&gt;\n  &lt;td class=\"diff-marker\"&gt; &lt;/td&gt;\n  &lt;td class=\"diff-context\"&gt;&lt;/td&gt;\n  &lt;td class=\"diff-marker\"&gt; &lt;/td&gt;\n  &lt;td class=\"diff-context\"&gt;&lt;/td&gt;\n&lt;/tr&gt;\n&lt;tr&gt;\n  &lt;td class=\"diff-marker\"&gt; &lt;/td&gt;\n  &lt;td class=\"diff-context\"&gt;&lt;div&gt;==Notes==&lt;/div&gt;&lt;/td&gt;\n  &lt;td class=\"diff-marker\"&gt; &lt;/td&gt;\n  &lt;td class=\"diff-context\"&gt;&lt;div&gt;==Notes==&lt;/div&gt;&lt;/td&gt;\n&lt;/tr&gt;\n", 
+      {"user"=>"Anna Frodesiak", "timestamp"=>"2011-01-27T00:47:31Z", "revid"=>"410276420", "size"=>"885", "title"=>"Islam in the Democratic Republic of the Congo", "from"=>"395536324", "parsedcomment"=>"link ivory trade", "to"=>"410276420", "parentid"=>"395536324", "ns"=>"0", "space"=>"preserve", "comment"=>"link ivory trade", "pageid"=>"6110090"}, 
+      [], 
+      [
+        ["https://www.cia.gov/library/publications/the-world-factbook/geos/cg.html", "CIA - The World Factbook - Congo, Democratic Republic of the<!-- Bot generated title -->"]
+      ]
+    ])
+    
+    assert_equal([["INSERT INTO link ( revision_id, link, source, response, description ) VALUES ( 410276420, 'https://www.cia.gov/library/publications/the-world-factbook/geos/cg.html', 'Net::HTTPMovedPermanently', false, 'CIA - The World Factbook - Congo, Democratic Republic of the<!-- Bot generated title -->' ) "]], @queue)
+  end
   
   def test_setup_table
     #to test the sql of the table definition
