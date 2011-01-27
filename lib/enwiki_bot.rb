@@ -96,14 +96,14 @@ class EnWikiBot < Bot #TODO db.close
       #call our methods in other threads: Process.fork (=> actual system independent processes) or Thread.new = in ruby vm psuedo threads?
       ## so should the detective classes be static, so there's no chance of trying to access shared resources at the same time?
       #TODO build in some error handling/logging/queue to see if threads die/blow up and what we missed
-      if should_follow?(info)
+      if should_follow?(info[0])
         #do the rest of this on threads - it could be slow, don't block
         @workers.dispatch do
           data = get_diff_data(info[2])
           links = find_links(data.first)
           
           unless links.empty?
-            @irc_log.info('following: ' + links.size.to_s)
+            @irc_log.info("following: #{links.size.to_s}; #{info[0]}")
             @detectives.each do |clazz|
               clues = info + data + [links] #this should return copies of each of this, we don't want to pass around the original objects on different threads
               @workers.dispatch do #on another thread
@@ -112,11 +112,11 @@ class EnWikiBot < Bot #TODO db.close
               end #end detective dispatch
             end #end of detectives.each
           else
-            @irc_log.info('not following; no links')
+            @irc_log.info('not following: no links')
           end #end of unless
         end #end of following dispatch
       else
-        @irc_log.info('not following; wrong namespace ')
+        @irc_log.info('not following: wrong namespace ')
       end #end of if follow
     end #end of should_store?
   end
@@ -193,9 +193,9 @@ class EnWikiBot < Bot #TODO db.close
   end
   
   #look at title, exclude titles starting with: User talk, Talk, Wikipedia, User, etc.
-  def should_follow? info 
+  def should_follow? article_title 
     bad_beg_regex = /^(Talk:|User:|User\stalk:|Wikipedia:|Wikipedia\stalk:|File\stalk:|MediaWiki:|MediaWiki\stalk:|Template\stalk:|Help:|Help\stalk:|Category\stalk:|Thread:|Thread\stalk:|Summary\stalk:|Portal\stalk:|Book\stalk:|Special:|Media:)/
-    !(info[1] =~ bad_beg_regex)
+    !(article_title =~ bad_beg_regex)
   end
   
   #clues:
