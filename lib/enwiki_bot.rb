@@ -74,9 +74,22 @@ class EnWikiBot < Bot #TODO db.close
             #@db_log_main.info sql[11..20].strip unless key == nil
             #@db_log.info "insert length = #{sql.length}; queue length = #{@db_queue.size}" if key == nil && sql[11..20] =~ /link/
           rescue SQLite3::SQLException, Exception => e
-            @db_log.info sql
-            @db_log.info e
-            @db_log.info e.backtrace
+            @db_log.error sql
+            @db_log.error e
+            begin
+              require 'net/smtp'
+
+              Net::SMTP.start('localhost') do |smtp|
+                smtp.send_message(
+                  "Something's gone wrong with our project! This is an automated message, but check db.log. #{Time.now.to_s}", 
+                  'senior_design@retrodict.com', 
+                  ['me@retrodict.com', 'brittney.exline@gmail.com', '']
+                )
+              end
+            rescue Errno::ECONNREFUSED
+              #we couldn't connect
+            end
+            #@db_log.error e.backtrace
             #puts 'Exception: ' + e.to_s
             #puts e.backtrace
           #ensure
