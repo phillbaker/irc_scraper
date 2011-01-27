@@ -47,8 +47,8 @@ class EnWikiBotTest < Test::Unit::TestCase
     #TODO
   end
   
-  def test_db_write!
-    res = @bot.db_write!(['Amar Ben Belgacem',
+  def test_db_queue
+    res = @bot.db_queue(['Amar Ben Belgacem',
       'M',
       '392473902'.to_i,
       '391225974'.to_i,
@@ -57,7 +57,7 @@ class EnWikiBotTest < Test::Unit::TestCase
       Time.now.to_i,
       "fixes, added persondata, typos fixed: august 24 \342\206\222 August 24 using [[Project:AWB|AWB]]"
     ])
-    assert_equal("1", res)
+    assert_equal(1, res)
   end
   
   def test_should_store?

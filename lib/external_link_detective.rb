@@ -61,14 +61,20 @@ SQL
   def find_source(url)
     #TODO do a check for the size and type-content of it _before_ we pull it
     #binary files we probably don't need to grab and things larger than a certain size we don't want to grab
-    uri = URI.parse(url)
+    #uri = URI.parse(url)# this doesn't like wikipeida urls like http://en.wikipedia.org/wiki/Herbert_McCabe|Herbert
+    url_regex = /^(.*?\/\/[^\/]*)(.*)$/x #break it up like this, we're using urls that URI doesn't parse
+    parts = url.scan(url_regex)
+    host = parts.first[0]
+    path = parts.first[1]
     
-    http = Net::HTTP.new(uri.host)
+    http = Net::HTTP.new(host)
     resp = nil
     ret = []
     begin
-      path = uri.path.to_s.empty? ? '/' : "#{uri.path}?#{uri.query}"
-      resp = http.request_get(path, 'User-Agent' => 'WikipediaAntiSpamBot/0.1 (+hincapie.cis.upenn.edu)')
+      resp = http.request_get(
+        path.empty? ? '/' : path, 
+        'User-Agent' => 'WikipediaAntiSpamBot/0.1 (+hincapie.cis.upenn.edu)'
+      )
       
       if(resp.is_a? Net::HTTPOK or resp.is_a? Net::HTTPFound)
         #truncate at 100K characters; not a good way to deal with size, should check the headers only

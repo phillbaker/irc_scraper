@@ -95,10 +95,14 @@ class ExternalLinkDetectiveTest < Test::Unit::TestCase
   def test_uncaught_errors
     #410371611
     #410394508
-    
+    # http://en.wikipedia.org/wiki/Herbert_McCabe|Herbert
     assert_nothing_raised do
       #with a down url
-      @detective.investigate([[nil, nil, 410395683], [nil] * 7, [['http://www.bomis.com/about/bomis_faq.html', '']]])
+      @detective.investigate([[nil, nil, 410410115], [nil] * 7, [['http://en.wikipedia.org/wiki/Herbert_McCabe|Herbert', '']]])
+    end
+    assert_nothing_raised do
+      #with a down url; this takes forever...
+    #  @detective.investigate([[nil, nil, 410395683], [nil] * 7, [['http://www.bomis.com/about/bomis_faq.html', '']]])
     end
   end
   
