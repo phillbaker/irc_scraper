@@ -72,7 +72,7 @@ class EnWikiBot < Bot #TODO db.close
             #db_log is NOT threadsafe! that stuff write at different times to the file!
             #@db_log.info sql[11..20].strip if key == nil #log 20 characters (baseically table) if there's no key(ie from detectives)
             #@db_log_main.info sql[11..20].strip unless key == nil
-            @db_log.info "insert length = #{sql.length}; queue length = #{@db_queue.size}" if key == nil && sql[11..20] =~ /link/
+            #@db_log.info "insert length = #{sql.length}; queue length = #{@db_queue.size}" if key == nil && sql[11..20] =~ /link/
           rescue Exception => e
             @db_log.info sql
             @db_log.info e
