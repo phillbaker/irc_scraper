@@ -17,27 +17,18 @@ class ExternalLinkDetective < Detective
     Proc.new do
       <<-SQL
       id integer primary key autoincrement,
-      revision_id integer,                              --foreign key to reference the original revision
+      revision_id integer,                              
       http_response boolean,
       link string,
       source text,
       description text,
       created DATE DEFAULT (datetime('now','localtime')),
-      FOREIGN KEY(revision_id) REFERENCES irc_wikimedia_org_en_wikipedia(id)   --TODO this table name probably shouldn't be hard coded
 SQL
     end
   end
 
   #info is a list: 
-  # 0: sample_id (string), 
-  # 1: article_name (string), 
-  # 2: desc (string), 
-  # 3: rev_id (string),
-  # 4: old_id (string)
-  # 5: user (string), 
-  # 6: byte_diff (int), 
-  # 7: timestamp (Time object), 
-  # 8: description (string)
+  # see notes before start_detective in enwiki_bot
   def investigate info
         
     linkarray = find_link_info(info)
@@ -76,28 +67,11 @@ SQL
     xml = get_xml({:format => :xml, :action => :query, :prop => :revisions, :revids => info[3], :rvdiffto => 'prev'})
     diff_text = Nokogiri.XML(xml).css('diff').children.to_s
     diff_html = CGI.unescapeHTML(diff_text)
-    noked = Nokogiri.HTML(diff_html)
+    #puts diff_html
+    #exit(1)
+    linkarray = find_urls_in_diff_html(diff_html)
     
-    #TODO can have bad revid's (ie first edits on a page)
-    linkarray = []
-    noked.css('.diff-addedline').each do |td| #TODO should probably be looking specifically at .diffchange children for added text within the line
-      revision_line = Nokogiri.HTML(CGI.unescapeHTML(td.children.to_s)).css('div').children
-      #http://daringfireball.net/2010/07/improved_regex_for_matching_urls
-      #%r{(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))}
-      url = %r{(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))}
-      #based on http://www.mediawiki.org/wiki/Markup_spec/BNF/Links
-      external_link_regex = /\[(#{url}\s*(.*?))\]/
-      #TODO pull any correctly formed links too?
-      res = revision_line.to_s.scan(external_link_regex) #TODO test this on pages with multiple links...
-      if res.size > 0
-        #p res
-        res = res.first.compact
-        #["http://www.eyemagazine.com/feature.php?id=62&amp;fid=270 Designing heroes", "http://www.eyemagazine.com/feature.php?id=62&amp;fid=270", "Designing heroes"]
-        linkarray << [res[1], #link
-                      res[2]] #description
-      end
-    end
-    
+    #puts 'done with links gathering'
     ret = []
     linkarray.each do |arr|
       #puts arr.first
@@ -106,6 +80,34 @@ SQL
       ret << {"link" => arr.first, "source" => source, "http_response" => success, 'description' => arr.last}
     end
     ret
+  end
+  
+  def find_urls_in_diff_html diff_html
+    noked = Nokogiri.HTML(diff_html)
+    
+    #TODO can have bad revid's (ie first edits on a page)
+    linkarray = []
+    noked.css('.diff-addedline').each do |td| #TODO should probably be looking specifically at .diffchange children for added text within the line
+      revision_line = Nokogiri.HTML(CGI.unescapeHTML(td.children.to_s)).css('div').children
+      #http://daringfireball.net/2010/07/improved_regex_for_matching_urls
+      #%r{(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))}
+      url = %r{(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))}x
+      #based on http://www.mediawiki.org/wiki/Markup_spec/BNF/Links
+      external_link_regex = /\[(#{url}\s*(.*?))\]/
+      #TOOD only look at text in the .diffchange
+      #TODO pull any correctly formed links in the diff text
+      #TODO on longer revisions, this regex takes FOREVER! need to simplify!
+      #TODO test this on pages with multiple links...
+      res = revision_line.to_s.scan(external_link_regex) 
+      if res.size > 0
+        #p res
+        res = res.first.compact
+        #["http://www.eyemagazine.com/feature.php?id=62&amp;fid=270 Designing heroes", "http://www.eyemagazine.com/feature.php?id=62&amp;fid=270", "Designing heroes"]
+        linkarray << [res[1], #link
+                      res[2]] #description
+      end
+    end
+    linkarray
   end
   
   def find_source(url)
