@@ -47,6 +47,18 @@ class EnWikiBotTest < Test::Unit::TestCase
     #TODO
   end
   
+  def test_start_detective
+    #AAI RQ-7 Shadow (410453846) http://www.scribd.com/doc/27362068/Flight-International-12-18-Jan-2010
+    # Herb Chambers (410454023) http://www.herbcares.com/
+    # PlayStation Portable successor (410459147) http://g4tv.com/thefeed/blog/tag/10441/PlayStation-NGP.html
+    
+    #require 'external_link_detective.rb'
+    #assert_nothing_raised do
+    #  @bot.start_detective(ExternalLinkDetective, )
+    #end
+    #http://www.herbcares.com/
+  end
+  
   def test_db_queue
     res = @bot.db_queue(['Amar Ben Belgacem',
       'M',

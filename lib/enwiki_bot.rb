@@ -42,7 +42,7 @@ class EnWikiBot < Bot #TODO db.close
       db_create_schema!(@table_name)
     end
     @name = bot_name
-    @update = Time.now.to_i
+    @update = Time.now.to_i + 60 #give it a head start to set up
     
     #https://github.com/danielbush/ThreadPool for info on the threadpool
     @workers = ThreadPooling::ThreadPool.new(250) #base this on a rough guesstimate of how many seconds of work we get per second
@@ -63,16 +63,21 @@ class EnWikiBot < Bot #TODO db.close
   def start_db_watcher()
     @workers.dispatch do
       sleep(60) #wait for a minute for everything to set up
-      prev = 0
+      prev_queue = 0
       loop do
-        curr = @db_queue.size
-        if (curr - prev) > 100
-          @error.error("SOMETHINGS WRONG! Queue size: #{curr}")
-          send_email("Queue size: #{curr}")
+        curr_queue = @db_queue.size
+        if (curr_queue - prev_queue) > 100
+          @error.error("SOMETHINGS WRONG! Queue size: #{curr_queue}")
+          send_email("Queue size: #{curr_queue}")
           #fork off a new thread to restart?
           #exit(1) #kill this one
         end
-        prev = curr
+        prev_queue = curr_queue
+        
+        #if((Time.now.to_i - @update) > 60) #time in seconds
+        #  @error.error("STARVING")
+        #end
+        sleep(1) #pause between recalls
       end
     end
   end
@@ -111,10 +116,6 @@ class EnWikiBot < Bot #TODO db.close
   end
   
   def hear(message)
-    if(((curr = Time.now.to_i) - @update) > 60) #time in seconds
-      @error.error("STARVING")
-    end
-    @update = curr
     if should_store?(message)
       info, size = store!(message)
       #@irc_log.info("#{size} - #{message[0..100]}")
@@ -140,7 +141,7 @@ class EnWikiBot < Bot #TODO db.close
                 end #end detective dispatch
               end #end of detectives.each
             else
-              @irc_log.info('not following: no links ' + info[0])
+              #@irc_log.info('not following: no links ' + info[0])
             end #end of unless
             done = true
           ensure
@@ -148,7 +149,7 @@ class EnWikiBot < Bot #TODO db.close
           end #end of error handling block
         end #end of following dispatch
       else
-        @irc_log.info('not following: wrong namespace ')
+        #@irc_log.info('not following: wrong namespace ')
       end #end of if follow
     end #end of should_store?
   end

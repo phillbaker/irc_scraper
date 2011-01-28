@@ -110,21 +110,21 @@ class ExternalLinkDetectiveTest < Test::Unit::TestCase
       @detective.investigate([[nil, nil, 410430950], [nil] * 7, [['www.spanishdict.com', '']]])
     end
     
-    assert_nothing_raised do
-      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.ellisislandimmigrants.org/ellis_island_archives.htm', '']]])
-      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://82.165.253.62/quarterly/spr06/kissing.pdf', '']]])
-      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://sumagazine.syr.edu/summer03/alumnijournal/index.html', '']]])
-      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.answers.com/topic/ring-of-the-fisherman', '']]])
-      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.religionfacts.com/christianity/things/icons.htm', '']]])
-      @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.history.com/minisite.do?content_type=Minisite_Generic&amp;content_type_id=50231&amp;display_order=2&amp;sub_display_order=8&amp;mini_id=1459', '']]])
-      #@detective.investigate([[nil, nil, 410444868], [nil] * 7, [['', '']]])
-    end
+    # assert_nothing_raised do #one of the follow takes forever to timeout
+    #       @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.ellisislandimmigrants.org/ellis_island_archives.htm', '']]])
+    #       @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://82.165.253.62/quarterly/spr06/kissing.pdf', '']]])
+    #       @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://sumagazine.syr.edu/summer03/alumnijournal/index.html', '']]])
+    #       @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.answers.com/topic/ring-of-the-fisherman', '']]])
+    #       @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.religionfacts.com/christianity/things/icons.htm', '']]])
+    #       @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.history.com/minisite.do?content_type=Minisite_Generic&amp;content_type_id=50231&amp;display_order=2&amp;sub_display_order=8&amp;mini_id=1459', '']]])
+    #       #@detective.investigate([[nil, nil, 410444868], [nil] * 7, [['', '']]])
+    #     end
     #410445179 
     assert_nothing_raised do
       @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://books.google.com/books?id=ZA4EAAAAMBAJ&amp;pg=PA24&amp;lpg=PA24&amp;dq=Diva:+The+Singles+Collection+sarah+brightman++Nielsen+SoundScan&amp;source=bl&amp;ots=0IC5s6ktyq&amp;sig=0blfM6hOIZcIBQQq96_INMcPDqU&amp;hl=es&amp;ei=mrUmTer0GIep8Ab1_cWrAQ&amp;sa=X&amp;oi=book_result&amp;ct=result&amp;resnum=8&amp;ved=0CFYQ6AEwBw#v=onepage&amp;q=Diva%3A%20The%20Singles%20Collection%20sarah%20brightman%20%20Nielsen%20SoundScan&amp;f=false', '']]])
       @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.billboard.biz/bbbiz/content_display/industry/news/e3i4cdea7d2a4bcd3986f84169caf3af94d', '']]])
     end
-    #410445320 http://thepianoparlour.squarespace.com/whats-opera-doc/
+    
     assert_nothing_raised do
       @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.ellisislandimmigrants.org/ellis_island_archives.htm', '']]])
       @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://sumagazine.syr.edu/summer03/alumnijournal/index.html', '']]])
@@ -132,6 +132,35 @@ class ExternalLinkDetectiveTest < Test::Unit::TestCase
       @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.religionfacts.com/christianity/things/icons.htm', '']]])
       @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://www.history.com/minisite.do?content_type=Minisite_Generic&amp;content_type_id=50231&amp;display_order=2&amp;sub_display_order=8&amp;mini_id=1459', '']]])
       @detective.investigate([[nil, nil, 410444868], [nil] * 7, [['http://82.165.253.62/quarterly/spr06/kissing.pdf', '']]])
+    end
+    assert_nothing_raised do
+      @detective.investigate([[nil, nil, 410445320], [nil] * 7, [['http://thepianoparlour.squarespace.com/whats-opera-doc/', '']]])
+    end
+    # 
+    assert_nothing_raised do
+      @detective.investigate([[nil, nil, 410449382], [nil] * 7, [['http://www.sikh-heritage.co.uk/arts/bollywoodgreats/bollygreats.htm', '']]])
+    end
+    
+    #http://dsal.uchicago.edu/books/annualofurdustudies/pager.html?volume=5&amp;objectid=PK2151.A6152_5_087.gif
+    #http://www.dawn.com/weekly/images/archive/050814/images1.htm
+    #http://www.imdb.com/title/tt0325447/
+    #http://www.sahitya-akademi.gov.in/old_version/awa10322.htm#urdu
+    #410449952 http://www.ku.edu.af/index.php?module=cms&amp;action=showfulltext&amp;id=gen9Srv40Nme31_6314_1220327784&amp;sectionid=init_1
+  end
+  
+  def test_uncaught_errors2
+    #AAI RQ-7 Shadow () 
+    assert_nothing_raised do
+      #Net::HTTPBadResponse
+      @detective.investigate([[nil, nil, 410453846], [nil] * 7, [['http://www.scribd.com/doc/27362068/Flight-International-12-18-Jan-2010', '']]])
+    end
+    # Herb Chambers () 
+    assert_nothing_raised do
+      @detective.investigate([[nil, nil, 410454023], [nil] * 7, [['http://www.herbcares.com/', '']]])
+    end
+    # PlayStation Portable successor () 
+    assert_nothing_raised do
+      @detective.investigate([[nil, nil, 410459147], [nil] * 7, [['http://g4tv.com/thefeed/blog/tag/10441/PlayStation-NGP.html', '']]])
     end
   end
   

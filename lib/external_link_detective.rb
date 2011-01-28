@@ -96,9 +96,12 @@ SQL
       end
       #shallow convert all keys to lowercased symbols
       ret << resp.to_hash.inject({}){|memo,(k,v)| memo[k.to_s.downcase.to_sym] = v; memo} #the headers
-    rescue Errno::ETIMEDOUT, SocketError => e
-      ret << e.class.to_s
+    rescue Net::HTTPBadResponse, Errno::ECONNRESET, Errno::ETIMEDOUT, Errno::ECONNREFUSED, SocketError, 
+           Timeout::Error, Errno::EINVAL, EOFError, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e #Net::HTTPExceptions also?
+      ret << e.class.to_s 
       ret << {}
+    #rescue Exception => e #TODO this shouldn't be necesary,but apparently it breaks shit to let errors escape this
+      #TODO, write to some log...
     end
     
     ret
