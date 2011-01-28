@@ -28,12 +28,13 @@ def get_xml(params = {:format => :xml, :action => :query})#TODO put these in so 
   
     raise "POST FAILED:" + resp.inspect unless resp.is_a? Net::HTTPOK or resp.is_a? Net::HTTPFound
     resp.body
-  rescue Errno::ETIMEDOUT
+  rescue Net::HTTPBadResponse, Errno::ECONNRESET, Errno::ETIMEDOUT, Errno::ECONNREFUSED, SocketError, 
+           Timeout::Error, Errno::EINVAL, EOFError, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
     if retries>0
       retries=retries-1
       retry
     else
-      raise Errno::ETIMEDOUT("Connection timed out after more than 3 retries").new
+      raise Exception.new("Connection timed out after more than 3 retries: #{e}")
    end
   end
 end   

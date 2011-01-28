@@ -176,6 +176,19 @@ class EnWikiBotTest < Test::Unit::TestCase
     #TODO
   end
   
+  def test_random_errors
+    class Net::HTTP #quick debugging script
+      def request_get(path, hash = {})
+        raise Exception.new('url error') if rand(10) == 1
+        true
+      end
+    end
+    
+    100.times do
+      @bot.
+    end
+  end
+  
   def test_finds_urls_not_spaced
     #rev_id = 363492332
     xml = <<-END

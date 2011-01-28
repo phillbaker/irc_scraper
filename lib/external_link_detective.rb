@@ -100,8 +100,10 @@ SQL
            Timeout::Error, Errno::EINVAL, EOFError, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e #Net::HTTPExceptions also?
       ret << e.class.to_s 
       ret << {}
-    #rescue Exception => e #TODO this shouldn't be necesary,but apparently it breaks shit to let errors escape this
-      #TODO, write to some log...
+    rescue Exception => e
+      #for some reason we're not catching all errors in the bot that calls this
+      # so try capturing all exotic exceptions and reclassifying them as stock exceptions
+      raise Exception.new(e.to_s) 
     end
     
     ret

@@ -28,8 +28,6 @@ class EnWikiBot < Bot #TODO db.close
     @table_name = server.gsub(/\./, '_') + '_' + channel.gsub(/\./, '_') #TODO this isn't really sanitized...use URI.parse
     @error = Logger.new('log/bot.log') 
     @db_log = Logger.new('log/db.log')
-    #@db_log_main = Logger.new('log/db_main.log')
-    #@db_log_link = Logger.new('log/link.log')
     @irc_log = Logger.new('log/feed.log')
     if db
       @db = db
@@ -45,11 +43,11 @@ class EnWikiBot < Bot #TODO db.close
     @update = Time.now.to_i + 60 #give it a head start to set up
     
     #https://github.com/danielbush/ThreadPool for info on the threadpool
-    @workers = ThreadPooling::ThreadPool.new(250) #base this on a rough guesstimate of how many seconds of work we get per second
+    @workers = ThreadPooling::ThreadPool.new(100) #base this on a rough guesstimate of how many seconds of work we get per second
     @db_queue = Queue.new
-    #puts 'initial memory location: ' + @db_queue.to_s
     start_db_worker()
-    start_db_watcher()
+    start_db_queue_watcher()
+    start_db_write_watcher()
     #Thread.abort_on_exception = true #set this so that if there's an exception on any of these threads, everything quits - good for initial debugging
     #@detectives = [RevisionDetective, AuthorDetective, ExternalLinkDetective, PageDetective]
     @detectives = [ExternalLinkDetective]
@@ -60,7 +58,7 @@ class EnWikiBot < Bot #TODO db.close
     super(bot_name)
   end
   
-  def start_db_watcher()
+  def start_db_queue_watcher()
     @workers.dispatch do
       sleep(60) #wait for a minute for everything to set up
       prev_queue = 0
@@ -74,10 +72,22 @@ class EnWikiBot < Bot #TODO db.close
         end
         prev_queue = curr_queue
         
-        #if((Time.now.to_i - @update) > 60) #time in seconds
-        #  @error.error("STARVING")
-        #end
         sleep(1) #pause between recalls
+      end
+    end
+  end
+  
+  def start_db_write_watcher() #TODO this isn't working
+    @workers.dispatch do
+      sleep(60) #wait for a minute for everything to set up
+      prev_queue = 0
+      loop do
+        if((Time.now.to_i - @update) > 60) #time in seconds
+          @error.error("STARVING")
+          #send_email("I'M STARVING, FEEDME!! #{Time.now.to_s}")
+        end
+        
+        sleep(30) #pause between recalls
       end
     end
   end
@@ -94,20 +104,15 @@ class EnWikiBot < Bot #TODO db.close
             sql_cleaned = sql.gsub(/\x00/, '')#take out nul characters; don't write them to db
             statement = db.prepare(sql_cleaned)
             statement.execute!
+            @update = Time.now.to_i
             done = true
             #db_log is NOT threadsafe! that stuff write at different times to the file!
-            #@db_log.info sql[11..20].strip if key == nil #log 20 characters (baseically table) if there's no key(ie from detectives)
-            #@db_log_main.info sql[11..20].strip unless key == nil
-            #@db_log.info "insert length = #{sql.length}; queue length = #{@db_queue.size}" if key == nil && sql[11..20] =~ /link/
           rescue SQLite3::SQLException, Exception => e
+            #TODO put in a new table (or maybe a column for logging errors?) with a retry?
             @db_log.error sql
             @db_log.error e
-            #@db_log.error e.backtrace
-            #puts 'Exception: ' + e.to_s
-            #puts e.backtrace
           ensure
             send_email('sql exception') unless done
-            #puts 'done writing'
           end
         end
       end
@@ -118,11 +123,8 @@ class EnWikiBot < Bot #TODO db.close
   def hear(message)
     if should_store?(message)
       info, size = store!(message)
-      #@irc_log.info("#{size} - #{message[0..100]}")
-      #puts 'stored'
       #call our methods in other threads: Process.fork (=> actual system independent processes) or Thread.new = in ruby vm psuedo threads?
       ## so should the detective classes be static, so there's no chance of trying to access shared resources at the same time?
-      #TODO build in some error handling/logging/queue to see if threads die/blow up and what we missed
       if should_follow?(info[0])
         #do the rest of this on threads - it could be slow, don't block
         @workers.dispatch do
@@ -144,6 +146,8 @@ class EnWikiBot < Bot #TODO db.close
               #@irc_log.info('not following: no links ' + info[0])
             end #end of unless
             done = true
+          rescue Exception => e
+            @irc_log.error('error starting detective: ' + e.to_s)
           ensure
             @irc_log.error('broken!: ' + info[0] + ' ' + info[2]) unless done
           end #end of error handling block
@@ -170,7 +174,6 @@ class EnWikiBot < Bot #TODO db.close
       #TOOD only look at text in the .diffchange
       #TODO pull any correctly formed links in the diff text
       #TODO on longer revisions, this regex takes FOREVER! need to simplify!
-      #TODO test this on pages with multiple links...
       res = revision_line.to_s.scan(external_link_regex) 
       if res.size > 0
         #p res
@@ -253,9 +256,6 @@ class EnWikiBot < Bot #TODO db.close
     rescue Exception => e
       str = "EXCEPTION: sample id ##{info[0]} caused: #{e.message} at #{e.backtrace.find{|i| i =~ /_detective|mediawiki/} } with #{message}"
       @error.error(str)
-      #exp = Exception.new(str)
-      #exp.set_backtrace(e.backtrace.select{|i| i =~ /_detective/ })
-      #raise exp
     rescue
       @error.error('other catching block')
     ensure
@@ -282,7 +282,7 @@ class EnWikiBot < Bot #TODO db.close
         )
       end
     rescue Errno::ECONNREFUSED
-      #we couldn't connect
+      #we couldn't connect, it's not available, so ignore it
     end
   end
   
@@ -297,8 +297,6 @@ class EnWikiBot < Bot #TODO db.close
   def store! message
     fields = []
     fields = process_irc(message)
-    #TODO for some reason, a bunch of messages get cut off and we don't get the entire thing...but then it shouldn't appear here...the regexp above should clear it...
-    raise Exception.new("ERROR: message didn't parse") if fields == nil
     
     fields[2] = fields[2].to_i
     fields[3] = fields[3].to_i
@@ -354,7 +352,6 @@ class EnWikiBot < Bot #TODO db.close
   
   #args should be: article_name, desc, rev_id, old_id, user, byte_diff, ts, description
   def db_queue args
-    #TODO put this in rescue blocks so that if something chokes, we don't completely die, and put in a new table (or maybe a column for logging errors?)
     args.collect! do |o|
       o.is_a?(String) ? SQLite3::Database.quote(o) : o
     end
