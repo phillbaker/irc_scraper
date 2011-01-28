@@ -128,6 +128,7 @@ class EnWikiBot < Bot #TODO db.close
       if should_follow?(info[0])
         #do the rest of this on threads - it could be slow, don't block
         @workers.dispatch do
+          sleep(5) #allow mediawiki servers time to come to consistency
           done = false
           begin
             data = get_diff_data(info[2])
@@ -147,7 +148,7 @@ class EnWikiBot < Bot #TODO db.close
             end #end of unless
             done = true
           rescue Exception => e
-            @irc_log.error('error starting detective: ' + e.to_s)
+            @irc_log.error("starting detective@#{info[0]}[#{info[2]}]: #{e.to_s}: #{e.backtrace.find{|i| i =~ /_bot|mediawiki/}}")
           ensure
             @irc_log.error('broken!: ' + info[0] + ' ' + info[2]) unless done
           end #end of error handling block
@@ -186,10 +187,20 @@ class EnWikiBot < Bot #TODO db.close
     linkarray
   end
   
-  def get_diff_data rev_id
+  def get_xml_diff_data rev_id
     #http://en.wikipedia.org/w/api.php?action=query&prop=revisions&revids=363492332&rvdiffto=prev&rvprop=ids|flags|timestamp|user|size|comment|parsedcomment|tags|flagged
     xml = get_xml({:format => :xml, :action => :query, :prop => :revisions, :revids => rev_id, :rvdiffto => 'prev', :rvprop => 'ids|flags|timestamp|user|size|comment|parsedcomment|tags|flagged' })
     noked = Nokogiri.XML(xml)
+  end
+  
+  def get_diff_data rev_id
+    #deal with: <?xml version="1.0"?><api><query><badrevids><rev revid="410498620" /></badrevids></query></api>
+    noked = ''
+    3.times do
+      noked = get_xml_diff_data(rev_id)
+      break if noked.css('badrevids').first == nil
+      @irc_log.error("Badrevid@#{rev_id}")
+    end
     attrs = {}
     #page attributes
     # pageid = 
