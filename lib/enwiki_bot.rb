@@ -16,7 +16,12 @@ require 'logger'
 require 'bundler/setup'
 require 'nokogiri'
 
-class EnWikiBot < Bot #TODO db.close
+#TODO db.close on trapping the sig singal? Or should that top-level catching just call a clean up?
+#TODO we should abstract some of the error handling so it's bullet proof: 
+# we should throw the default dispatch() in another method that wraps it in begin/rescue blocks
+# it's easy to loose exceptions on different threads, that would prevent it
+ 
+class EnWikiBot < Bot
   
   attr_accessor :db, :name
   
@@ -132,9 +137,10 @@ class EnWikiBot < Bot #TODO db.close
           done = false
           begin
             data = get_diff_data(info[2])
+            
             links = find_links(data.first)
             unless links.empty?
-              @irc_log.info("following #{links.size.to_s} links; db queue: #{@db_queue.size.to_s}; #{info[0]}")
+              @irc_log.info("#{links.size.to_s} links; db queue: #{@db_queue.size.to_s}; thread pool queue: #{@workers.queue.size.to_s}; #{info[0]}")
               @detectives.each do |clazz|
                 clues = info + data + [links] #this should return copies of each of this, we don't want to pass around the original objects on different threads
                 
@@ -165,23 +171,47 @@ class EnWikiBot < Bot #TODO db.close
     diff_html = CGI.unescapeHTML(xml_diff_unescaped)
     noked = Nokogiri.HTML(diff_html)
     linkarray = []
-    noked.css('.diff-addedline').each do |td| #TODO should probably be looking specifically at .diffchange children for added text within the line
-      revision_line = Nokogiri.HTML(CGI.unescapeHTML(td.children.to_s)).css('div').children
+    noked.css('.diff-addedline').each do |td| 
+      revisions = []
+      if(td.css('.diffchange').empty?) #we're dealing with a full line added
+        revisions << Nokogiri.HTML(CGI.unescapeHTML(td.children.to_s)).css('div').children
+      else
+        td.css('.diffchange').each do |diff|
+          revisions << CGI.unescapeHTML(diff.children.to_s)
+        end
+      end
       #http://daringfireball.net/2010/07/improved_regex_for_matching_urls
       #%r{(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))}
-      url = %r{(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))}x
+      url_regex = %r{(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))}x
       #based on http://www.mediawiki.org/wiki/Markup_spec/BNF/Links
-      external_link_regex = /\[(#{url}\s*(.*?))\]/
+      wikilink_regex = /\[(#{url_regex}\s*(.*?))\]/
       #TOOD only look at text in the .diffchange
       #TODO pull any correctly formed links in the diff text
       #TODO on longer revisions, this regex takes FOREVER! need to simplify!
-      res = revision_line.to_s.scan(external_link_regex) 
-      if res.size > 0
-        #p res
-        res = res.first.compact
-        #["http://www.eyemagazine.com/feature.php?id=62&amp;fid=270 Designing heroes", "http://www.eyemagazine.com/feature.php?id=62&amp;fid=270", "Designing heroes"]
-        linkarray << [res[1], #link
-                      res[2]] #description
+      links = {}
+      revisions.each do |revision|
+        #wikilinks
+        regex_results = revision.to_s.scan(wikilink_regex) #TODO what if there are multiple matches?
+        unless regex_results.empty?
+          regex_results.each do |regex_result|
+            link, desc = regex_result.compact[1..2] 
+            links[link] = desc
+          end
+        end
+        
+        #interpreted links, but don't just grab the same ones as above
+        #TODO come up with the right regex, we'll just eliminate the same ones for now...not efficient like n^2; okay, most edits are small
+        regex_results = revision.to_s.scan(url_regex)
+        unless regex_results.empty?
+          regex_results.each do |regex_result|
+            link = regex_result.first
+            links[link] = '' unless links.keys.include?(link)
+          end
+        end
+      end
+      links.each do |regex_result|
+        linkarray << [regex_result[0], #link
+                      regex_result[1] || ''] #description, nil with interpreted
       end
     end
     linkarray
@@ -193,13 +223,16 @@ class EnWikiBot < Bot #TODO db.close
     noked = Nokogiri.XML(xml)
   end
   
+  #returns [diff, attrs, tags]
+  #returns nil if we keep getting badrevid from mediawiki
   def get_diff_data rev_id
     #deal with: <?xml version="1.0"?><api><query><badrevids><rev revid="410498620" /></badrevids></query></api>
     noked = ''
-    3.times do
+    3.times do |i|
       noked = get_xml_diff_data(rev_id)
       break if noked.css('badrevids').first == nil
       @irc_log.error("Badrevid@#{rev_id}")
+      return nil if i == 3 #short circuit the rest of this method, don't let us get null pointers
     end
     attrs = {}
     #page attributes
